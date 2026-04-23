@@ -1,0 +1,3352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colony: Sector Supremacy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a1a;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', 'Consolas', monospace;
+  overflow: hidden;
+  height: 100vh;
+  user-select: none;
+}
+#game-container { display: flex; flex-direction: column; height: 100vh; }
+#top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; background: #111128; border-bottom: 1px solid #2a2a4a;
+  min-height: 44px; gap: 16px; flex-shrink: 0;
+}
+#top-bar .resources { display: flex; gap: 18px; align-items: center; }
+.resource-item { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: bold; }
+.res-minerals { color: #cc8844; }
+.res-energy { color: #4488ff; }
+.res-food { color: #44cc66; }
+.res-credits { color: #ffcc00; }
+.res-stardust { color: #cc66ff; }
+.res-pop { color: #dd88dd; }
+.res-fleet { color: #cc88ff; }
+#turn-info { font-size: 14px; color: #8888aa; }
+#btn-end-turn {
+  padding: 7px 18px; background: #1a3a5a; color: #00ccff;
+  border: 1px solid #00ccff; border-radius: 4px; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: bold; transition: all 0.2s;
+}
+#btn-end-turn:hover { background: #00ccff; color: #0a0a1a; }
+#main-area { display: flex; flex: 1; overflow: hidden; }
+#map-container { flex: 1; position: relative; overflow: hidden; }
+#map { display: block; cursor: pointer; }
+#sidebar {
+  width: 310px; background: #0d0d24; border-left: 1px solid #2a2a4a;
+  display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
+}
+.panel { padding: 10px 12px; border-bottom: 1px solid #1a1a3a; }
+.panel-title {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+  color: #00ccff; margin-bottom: 6px; font-weight: bold;
+}
+.panel-content { font-size: 13px; line-height: 1.6; }
+.build-btn {
+  display: block; width: 100%; padding: 7px 10px; margin-bottom: 4px;
+  background: #1a1a3a; color: #ccc; border: 1px solid #2a2a5a;
+  border-radius: 3px; cursor: pointer; font-family: inherit;
+  font-size: 12px; text-align: left; transition: all 0.15s;
+}
+.build-btn:hover:not(:disabled) { background: #2a2a5a; color: #fff; border-color: #00ccff; }
+.build-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.build-btn .cost { color: #888; font-size: 11px; }
+@keyframes tut-pulse { 0%,100%{box-shadow:0 0 4px #00ffcc44;border-color:#00ffcc88;} 50%{box-shadow:0 0 14px #00ffccaa;border-color:#00ffcc;} }
+.tut-highlight { animation: tut-pulse 1.2s ease-in-out infinite; border-color: #00ffcc !important; }
+@keyframes tut-bar-pulse { 0%,100%{background:rgba(0,255,204,0.05);} 50%{background:rgba(0,255,204,0.25);} }
+.tut-bar-hl { animation: tut-bar-pulse 1.2s ease-in-out infinite; border-radius: 4px; padding: 2px 6px; outline: 1px solid #00ffcc88; }
+.action-btn {
+  display: inline-block; padding: 5px 11px; margin: 2px 3px 2px 0;
+  background: #1a2a3a; color: #88ccff; border: 1px solid #3a4a6a;
+  border-radius: 3px; cursor: pointer; font-family: inherit; font-size: 12px;
+  transition: all 0.15s;
+}
+.action-btn:hover { background: #3a4a6a; color: #fff; }
+.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.action-btn.danger { background: #3a1a1a; color: #ff6666; border-color: #7a3a3a; }
+.action-btn.danger:hover { background: #7a3a3a; color: #fff; }
+.action-btn.green { background: #1a3a1a; color: #66ff66; border-color: #3a7a3a; }
+.action-btn.green:hover { background: #3a7a3a; color: #fff; }
+.stat-row { display: flex; justify-content: space-between; padding: 1px 0; }
+.stat-label { color: #888; }
+.stat-val { font-weight: bold; }
+.stockpile-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.cargo-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.hp-bar-outer {
+  width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 4px 0;
+}
+.hp-bar-inner { height: 100%; border-radius: 3px; transition: width 0.3s; }
+#log-panel {
+  height: 110px; background: #080818; border-top: 1px solid #2a2a4a;
+  overflow-y: auto; padding: 4px 12px; font-size: 12px; line-height: 1.5; flex-shrink: 0;
+}
+.log-entry { padding: 1px 0; }
+.log-event { color: #aaa; } .log-good { color: #44cc66; }
+.log-bad { color: #ff4444; } .log-combat { color: #ff8844; }
+.log-info { color: #4488ff; }
+.highlight { color: #00ffcc; }
+#intro-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.88); display: flex; align-items: center;
+  justify-content: center; z-index: 100;
+}
+#intro-box {
+  background: #111130; border: 1px solid #00ccff; border-radius: 8px;
+  padding: 30px; max-width: 620px; text-align: center;
+}
+#intro-box h1 { color: #00ffcc; font-size: 28px; margin-bottom: 12px; letter-spacing: 2px; }
+#intro-box p { color: #aab; margin-bottom: 10px; font-size: 14px; line-height: 1.6; }
+#intro-box ul { text-align: left; color: #8899aa; font-size: 13px; margin: 10px 30px; line-height: 1.8; }
+#intro-box button {
+  margin-top: 14px; padding: 11px 30px; background: #00ccff; color: #0a0a1a;
+  border: none; border-radius: 4px; font-size: 15px; font-weight: bold;
+  cursor: pointer; font-family: inherit;
+}
+#intro-box button:hover { background: #00ffcc; }
+.level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.level-card {
+  background: #0a0a22; border: 1px solid #223; border-radius: 6px; padding: 12px;
+  text-align: left; cursor: pointer; transition: border-color 0.15s;
+}
+.level-card:hover { border-color: #00ccff; }
+.level-card h3 { color: #00ccff; font-size: 14px; margin: 0 0 4px 0; }
+.level-card .level-diff { font-size: 11px; margin-bottom: 4px; }
+.level-card p { color: #778; font-size: 12px; margin: 0; line-height: 1.4; }
+.level-card.tutorial { grid-column: 1 / -1; border-color: #00ffcc44; }
+.level-card.tutorial h3 { color: #00ffcc; }
+#tutorial-popup {
+  position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
+  background: #111130; border: 2px solid #00ffcc; border-radius: 8px;
+  padding: 16px 22px; max-width: 420px; z-index: 90; display: none;
+  box-shadow: 0 0 30px rgba(0,255,204,0.15);
+}
+#tutorial-popup h3 { color: #00ffcc; font-size: 14px; margin: 0 0 6px 0; }
+#tutorial-popup p { color: #aab; font-size: 13px; margin: 0 0 10px 0; line-height: 1.5; }
+#tutorial-popup button {
+  padding: 6px 18px; background: #00ccff; color: #0a0a1a;
+  border: none; border-radius: 4px; font-size: 13px; font-weight: bold;
+  cursor: pointer; font-family: inherit;
+}
+#end-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.88); display: none; align-items: center;
+  justify-content: center; z-index: 100;
+}
+#end-box {
+  background: #111130; border: 2px solid #00ffcc; border-radius: 8px;
+  padding: 36px; max-width: 460px; text-align: center;
+}
+#end-box h1 { font-size: 30px; margin-bottom: 14px; }
+#end-box p { color: #aab; margin-bottom: 8px; font-size: 14px; }
+#end-box button {
+  margin-top: 18px; padding: 11px 30px; background: #00ccff; color: #0a0a1a;
+  border: none; border-radius: 4px; font-size: 15px; font-weight: bold;
+  cursor: pointer; font-family: inherit;
+}
+</style>
+</head>
+<body>
+
+<div id="intro-overlay">
+  <div id="intro-box">
+    <h1>COLONY</h1>
+    <p><em>Sector Supremacy</em></p>
+    <p>Choose your mission:</p>
+    <div class="level-grid">
+      <div class="level-card tutorial" onclick="startGame('tutorial')">
+        <h3>📘 Tutorial</h3>
+        <div class="level-diff" style="color:#00ffcc;">Guided</div>
+        <p>Learn the ropes step by step. Build your colony, use transports, construct ships, and defeat a small pirate outpost.</p>
+      </div>
+      <div class="level-card" onclick="startGame('skirmish')">
+        <h3>⚔ Pirate Skirmish</h3>
+        <div class="level-diff" style="color:#4c4;">Easy</div>
+        <p>A lone pirate base threatens the sector. No rival colony — just you vs the pirates.</p>
+      </div>
+      <div class="level-card" onclick="startGame('frontier')">
+        <h3>🌌 Frontier</h3>
+        <div class="level-diff" style="color:#cc4;">Medium</div>
+        <p>Pirates and a rival colony compete for resources. Eliminate both to claim the sector.</p>
+      </div>
+      <div class="level-card" onclick="startGame('hostile')">
+        <h3>💀 Hostile Sector</h3>
+        <div class="level-diff" style="color:#f44;">Hard</div>
+        <p>A well-established rival and aggressive pirates. You start with fewer resources and they start stronger.</p>
+      </div>
+      <div class="level-card" onclick="startGame('gauntlet')">
+        <h3>🔥 Gauntlet</h3>
+        <div class="level-diff" style="color:#f4f;">Brutal</div>
+        <p>Two pirate bases, an advanced rival, and scarce resources. Only the best commanders survive.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tutorial-popup">
+  <h3 id="tut-title"></h3>
+  <p id="tut-text"></p>
+  <button onclick="tutorialNext()">Got it</button>
+</div>
+
+<div id="end-overlay">
+  <div id="end-box">
+    <h1 id="end-title"></h1>
+    <p id="end-msg"></p>
+    <p id="end-stats"></p>
+    <button onclick="location.reload()">CHOOSE MISSION</button>
+  </div>
+</div>
+
+<div id="game-container">
+  <div id="top-bar">
+    <div id="turn-info">Turn 1</div>
+    <div class="resources">
+      <div class="resource-item res-minerals"><span>◆</span> <span id="res-minerals">0</span><span id="res-minerals-d" style="font-size:11px;margin-left:3px;"></span></div>
+      <div class="resource-item res-energy"><span>⚡</span> <span id="res-energy">0</span><span id="res-energy-d" style="font-size:11px;margin-left:3px;"></span></div>
+      <div class="resource-item res-food"><span>🌿</span> <span id="res-food">0</span><span id="res-food-d" style="font-size:11px;margin-left:3px;"></span></div>
+      <div class="resource-item res-credits"><span>¤</span> <span id="res-credits">0</span><span id="res-credits-d" style="font-size:11px;margin-left:3px;"></span></div>
+      <div class="resource-item res-stardust"><span>✦</span> <span id="res-stardust">0</span><span id="res-stardust-d" style="font-size:11px;margin-left:3px;"></span></div>
+    </div>
+    <div class="resource-item res-pop"><span>☺</span> Pop: <span id="res-pop-used">0</span>/<span id="res-pop-cap">5</span></div>
+    <div class="resource-item res-fleet"><span>⚔</span> Fleet: <span id="fleet-info">0</span></div>
+    <button id="btn-end-turn" onclick="endTurn()">END TURN ▶</button>
+  </div>
+  <div id="main-area">
+    <div id="map-container"><canvas id="map"></canvas></div>
+    <div id="sidebar"><div id="sidebar-content"></div></div>
+  </div>
+  <div id="log-panel"></div>
+</div>
+
+<script src="data/buildings.js"></script>
+<script src="data/ships.js"></script>
+<script src="data/tradeposts.js"></script>
+<script src="data/upgrades.js"></script>
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CFG = { COLS: 30, ROWS: 9, HEX: 34, STARS: 300 };
+const TERRAIN = { SPACE: 'space', ASTEROID: 'asteroid', NEBULA: 'nebula' };
+
+const RES = ['minerals','energy','food','credits','stardust'];
+
+const TILE_RES = ['minerals','food','stardust'];
+const RICON = { minerals:'◆', energy:'⚡', food:'🌿', credits:'¤', stardust:'✦' };
+const RCOL = { minerals:'#cc8844', energy:'#4488ff', food:'#44cc66', credits:'#ffcc00', stardust:'#cc66ff' };
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G, canvas, ctx, starField = [];
+let hoveredHex = null, selectedHex = null, selectedShipId = null, selectedFleetIds = null;
+let nextShipId = 1;
+let _clusterCache=null, _incomeCache=null;
+let cam = { x: 0, y: 0, zoom: 1 }; // camera offset (pixels) + zoom level
+let isDragging = false, dragStart = null, camStart = null;
+function dirtyCache(){_clusterCache=null;_incomeCache=null;}
+
+function freshStock() { return { minerals:0, energy:0, food:0, credits:0, stardust:0 }; }
+
+// ============================================================
+// LEVEL CONFIGS
+// ============================================================
+const LEVELS = {
+  tutorial: {
+    name: 'Tutorial', pirates: true, rival: false,
+    startMinerals: 30, startFood: 12, startCredits: 10,
+    pirateStrength: 0.5, // weaker pirates
+  },
+  skirmish: {
+    name: 'Pirate Skirmish', pirates: true, rival: false,
+    startMinerals: 20, startFood: 8, startCredits: 5,
+    pirateStrength: 1,
+  },
+  frontier: {
+    name: 'Frontier', pirates: true, rival: true,
+    startMinerals: 20, startFood: 8, startCredits: 5,
+    pirateStrength: 1, rivalStartMinerals: 20, rivalStartFood: 8,
+  },
+  hostile: {
+    name: 'Hostile Sector', pirates: true, rival: true,
+    startMinerals: 15, startFood: 6, startCredits: 3,
+    pirateStrength: 1.5, rivalStartMinerals: 30, rivalStartFood: 12,
+    rivalExtraBuildings: true,
+  },
+  gauntlet: {
+    name: 'Gauntlet', pirates: true, pirates2: true, rival: true,
+    startMinerals: 12, startFood: 5, startCredits: 2,
+    pirateStrength: 1.5, rivalStartMinerals: 35, rivalStartFood: 15,
+    rivalExtraBuildings: true,
+  },
+};
+
+// ============================================================
+// TUTORIAL SYSTEM
+// ============================================================
+
+// Each step may have:
+//   require(G)  — returns true when the player has completed the step
+//   highlight(G) — returns [{col,row},...] of hexes to pulse-highlight
+//   noBtn: true  — hide the "Got it" button (auto-advance only)
+//
+// Tutorial map is hardcoded (genTutorialMap). Key positions:
+//   CC=(2,4)  Solar=(3,4)  Mine=(3,3)  Hydro=(2,5)
+//   Relay=(4,4)  Habitat=(1,4)  Spaceport=(2,3)
+//   Pirate base=(22,4)
+const TUTORIAL_STEPS = [
+  { title: 'Welcome, Commander!',
+    text: 'This tutorial will teach you how to build a thriving colony. Your Command Center (CC) at the center of your screen is the heart of your base — it produces a small amount of minerals, energy, and food each turn.' },
+  { title: 'Your Objective',
+    text: 'Far to the east, a Pirate Base threatens the sector. You can see it marked in red. Your mission: build up your colony, raise a fleet, and destroy the pirate base to win! Let\'s start by building your economy.',
+    highlight(){ return [{col:22,row:4}]; }
+  },
+  { title: 'Step 1: Build a Solar Array',
+    text: 'Click the highlighted hex to the right of your CC. In the "Build Here" menu on the right sidebar, click the highlighted "Solar Array" button. Solar Arrays produce energy — most buildings consume it.',
+    noBtn: true, tutBuild: 'solar_array',
+    highlight(){ return [{col:3,row:4}]; },
+    require(G){ return !!findPlayerBldg('solar_array'); }
+  },
+  { title: 'Step 2: Build a Mine',
+    text: 'Click the highlighted asteroid hex (◆◆) above-right. Choose the highlighted "Mine" button. Mines produce minerals — your main construction resource. It needs energy from the connected solar array.',
+    noBtn: true, tutBuild: 'mine',
+    highlight(){ return [{col:3,row:3}]; },
+    require(G){ return !!findPlayerBldg('mine'); }
+  },
+  { title: 'Step 3: Build Hydroponics',
+    text: 'Click the highlighted hex below your CC. Click the highlighted "Hydroponics Farm" button. Farms produce food — you\'ll need it to support population when you build Habitats later.',
+    noBtn: true, tutBuild: 'hydroponics',
+    highlight(){ return [{col:2,row:5}]; },
+    require(G){ return !!findPlayerBldg('hydroponics'); }
+  },
+  { title: 'How Resources Work',
+    text: 'Important! Resources like minerals, food, and stardust are physically stored on each tile. See the coloured numbers on your Command Center? Those are real stockpiles. Buildings can only use resources from their own tile or immediate neighbors. To move resources further, you need transport ships or relays.',
+    tutResHL: true,
+    highlight(){ return [{col:2,row:4}]; }
+  },
+  { title: 'Physical Resources',
+    text: 'The minerals, food, and stardust totals shown here in the top bar are the sum of all your stockpiles across the map. But remember — each unit is physically on a specific tile. A mine far from your CC stores its minerals locally. To use them elsewhere, you must transport or relay them.',
+    tutTopHL: ['minerals','food','stardust']
+  },
+  { title: 'Energy & Credits',
+    text: 'Energy and credits work differently — they are colony-wide. Energy is a net balance: solar arrays and your CC produce it, while most buildings consume it. If the total goes negative, buildings shut down! Credits are a single shared pool earned from your CC and trade posts. Neither needs to be transported.',
+    tutTopHL: ['energy','credits']
+  },
+  { title: 'Step 4a: Select Your Transport',
+    text: 'Let\'s use your Hover Transpo to ferry minerals eastward. Click on your Command Center hex. In the "Ships Here" panel on the right, find the Hover Transpo and click the highlighted green "Select" button.',
+    noBtn: true, tutAction: 'select_ship',
+    highlight(){ return [{col:2,row:4}]; },
+    require(){ return selectedShipId && shipById(selectedShipId) && shipById(selectedShipId).type==='hovertranspo'; }
+  },
+  { title: 'Step 4b: Load Minerals',
+    text: 'With the transport selected, look at the "Cargo" panel in the sidebar. Click the highlighted "Load minerals" button to pick up minerals from your CC\'s stockpile.',
+    noBtn: true, tutAction: 'load_minerals',
+    require(){ const t=G.ships.find(s=>s.owner==='player'&&s.type==='hovertranspo'); return t&&(t.cargo.minerals||0)>0; }
+  },
+  { title: 'Step 4c: Move to the Solar Array',
+    text: 'Right-click the highlighted Solar Array hex to move your transport there. We\'ll drop off the minerals so they\'re staged for building further east.',
+    noBtn: true,
+    highlight(){ return [{col:3,row:4}]; },
+    require(){ const t=G.ships.find(s=>s.owner==='player'&&s.type==='hovertranspo'); return t&&t.col===3&&t.row===4; }
+  },
+  { title: 'Step 4d: Unload Minerals',
+    text: 'Now click the highlighted "Unload" button next to your minerals in the Cargo panel. The minerals will be added to this building\'s stockpile, making them available for construction on adjacent hexes.',
+    noBtn: true, tutAction: 'unload_minerals',
+    require(){ const t=G.ships.find(s=>s.owner==='player'&&s.type==='hovertranspo'); return t&&(t.cargo.minerals||0)===0; }
+  },
+  { title: 'Step 5: Build a Relay',
+    text: 'Click the highlighted hex and build a Relay. The minerals you just unloaded at the Solar Array are available here because it\'s an adjacent tile. Relays extend your resource network — buildings near a relay share stockpiles with each other.',
+    noBtn: true, tutBuild: 'relay',
+    highlight(){ return [{col:4,row:4}]; },
+    require(G){ return !!findPlayerBldg('relay'); }
+  },
+  { title: 'Population & Housing',
+    text: 'See the population counter (☺) in the top bar? Every ship and some buildings require population to operate. Your CC provides 5 pop capacity, but you\'ll quickly need more. Habitats add +10 capacity each — without enough housing, you can\'t build new ships or crew larger buildings.',
+    tutTopHL: ['pop']
+  },
+  { title: 'Step 6: Build a Habitat',
+    text: 'You\'ll need 10 minerals for a Habitat and you don\'t have enough yet, so press END TURN (your mine produces minerals each turn). Then use the transpo to ferry minerals into place and click the highlighted hex to the left of your CC and build the Habitat. It provides +10 population capacity and consumes 2 food per turn from adjacent tiles.',
+    noBtn: true, tutBuild: 'habitat',
+    highlight(){ return [{col:1,row:4}]; },
+    require(G){ return !!findPlayerBldg('habitat'); }
+  },
+  { title: 'Step 7: Build a Spaceport',
+    text: 'Click the highlighted hex above your CC. Click the highlighted "Spaceport" button — this is where you construct ships. It costs 16 minerals, so end turns until you have enough if needed.',
+    noBtn: true, tutBuild: 'spaceport',
+    highlight(){ return [{col:2,row:3}]; },
+    require(G){ return !!findPlayerBldg('spaceport'); }
+  },
+  { title: 'Step 8: Build a Fighter',
+    text: 'Click your Spaceport at (2,3). In the "Build Ships" section, click the highlighted "Fighter" button. Fighters are fast and cheap — 5 minerals and 3 credits. End turns to accumulate resources if needed.',
+    noBtn: true, tutShip: 'fighter',
+    highlight(){ return [{col:2,row:3}]; },
+    require(G){ return G.ships.some(s=>s.owner==='player'&&s.type==='fighter'); }
+  },
+  { title: 'Step 9: Combat Basics',
+    text: 'To use your fighter: click its hex, then click "Select" in Ships Here. Right-click highlighted hexes to move. When enemies are in range, red "Attack" buttons appear in the sidebar. Higher combat = more damage. Armor reduces incoming hits. Ships with range 2+ can fire without retaliation from melee enemies. Ships cannot move the turn they are built.' },
+  { title: 'Step 10: Destroy the Pirates!',
+    text: 'The Pirate Base is at (22,4) to the east. Send your ships to destroy it! Build more fighters or upgrade to corvettes/starships if you need more firepower. You can also end turns to bank resources. Destroying the pirate base wins the game. Good luck, Commander!',
+    highlight(){ return [{col:22,row:4}]; }
+  },
+];
+
+let tutorialStep = -1; // -1 = not in tutorial
+let _tutHighlight = []; // cached highlight hexes for current step
+let _tutAnim = 0; // animation frame ID for pulsing highlights
+
+function findPlayerBldg(key){
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
+    if(G.map[c][r].building===key&&G.map[c][r].owner==='player') return {col:c,row:r};
+  return null;
+}
+
+function tutCurrentStep(){
+  if(tutorialStep<0||tutorialStep>=TUTORIAL_STEPS.length) return null;
+  return TUTORIAL_STEPS[tutorialStep];
+}
+
+function tutorialUpdateHighlight(){
+  if(tutorialStep<0||tutorialStep>=TUTORIAL_STEPS.length){ _tutHighlight=[]; return; }
+  const s=TUTORIAL_STEPS[tutorialStep];
+  _tutHighlight=s.highlight?s.highlight(G):[];
+}
+
+function tutAnimLoop(){
+  if(_tutHighlight.length>0){
+    render();
+    _tutAnim=requestAnimationFrame(tutAnimLoop);
+  } else {
+    _tutAnim=0;
+  }
+}
+
+function startTutAnim(){
+  if(!_tutAnim&&_tutHighlight.length>0) _tutAnim=requestAnimationFrame(tutAnimLoop);
+}
+
+function stopTutAnim(){
+  if(_tutAnim){cancelAnimationFrame(_tutAnim);_tutAnim=0;}
+}
+
+function showTutorial(step){
+  tutorialStep=step;
+  stopTutAnim();
+  if(step>=TUTORIAL_STEPS.length){
+    document.getElementById('tutorial-popup').style.display='none';
+    _tutHighlight=[];
+    return;
+  }
+  const s=TUTORIAL_STEPS[step];
+  document.getElementById('tut-title').textContent=s.title;
+  document.getElementById('tut-text').textContent=s.text;
+  const btn=document.querySelector('#tutorial-popup button');
+  btn.style.display=s.noBtn?'none':'';
+  document.getElementById('tutorial-popup').style.display='block';
+  tutorialUpdateHighlight();
+  startTutAnim();
+}
+
+function tutorialNext(){
+  if(tutorialStep<0) return;
+  const s=TUTORIAL_STEPS[tutorialStep];
+  // If this step has a requirement, check it
+  if(s.require&&!s.require(G)) return;
+  showTutorial(tutorialStep+1);
+}
+
+function tutorialCheck(){
+  // Called after builds/actions — auto-advance if requirement met
+  if(G.level!=='tutorial'||tutorialStep<0||tutorialStep>=TUTORIAL_STEPS.length) return;
+  const s=TUTORIAL_STEPS[tutorialStep];
+  if(s.require&&s.require(G)) showTutorial(tutorialStep+1);
+}
+
+function newGame(levelKey) {
+  const level=LEVELS[levelKey||'frontier'];
+  return { turn:1, gameOver:false, map:[], ships:[], pirateP:0, rivalP:0,
+    credits:level.startCredits, rivalCredits:0, energySurplus:0, popCap:5, upgrades:{},
+    level:levelKey||'frontier' };
+}
+
+// ============================================================
+// HEX MATH (flat-top, odd-q offset)
+// ============================================================
+function h2p(c,r) {
+  const z=cam.zoom;
+  return { x: (CFG.HEX*1.5*c+60)*z+cam.x, y: (CFG.HEX*Math.sqrt(3)*(r+0.5*(c&1))+46)*z+cam.y };
+}
+function p2h(px,py) {
+  const z=cam.zoom;
+  const wx=(px-cam.x)/z, wy=(py-cam.y)/z;
+  const c = Math.round((wx-60)/(CFG.HEX*1.5));
+  const r = Math.round((wy-46)/(CFG.HEX*Math.sqrt(3))-0.5*(c&1));
+  if(c<0||c>=CFG.COLS||r<0||r>=CFG.ROWS) return null;
+  return {col:c,row:r};
+}
+function hexNb(c,r) {
+  const p=c&1;
+  const dirs = p ? [[1,0],[1,1],[0,1],[-1,1],[-1,0],[0,-1]]
+                 : [[1,-1],[1,0],[0,1],[-1,0],[-1,-1],[0,-1]];
+  const out=[];
+  for(const[dc,dr] of dirs){const nc=c+dc,nr=r+dr;if(nc>=0&&nc<CFG.COLS&&nr>=0&&nr<CFG.ROWS)out.push({col:nc,row:nr});}
+  return out;
+}
+function hexDist(c1,r1,c2,r2) {
+  const az=r1-(c1-(c1&1))/2, bz=r2-(c2-(c2&1))/2;
+  const ax=c1, bx=c2, ay=-ax-az, by=-bx-bz;
+  return Math.max(Math.abs(ax-bx),Math.abs(ay-by),Math.abs(az-bz));
+}
+function hk(c,r){return c*100+r;}
+
+// ============================================================
+// MAP GENERATION
+// ============================================================
+
+// Hardcoded tutorial map — fixed layout so tutorial can point to exact hexes
+function genTutorialMap(){
+  const lvl=LEVELS.tutorial;
+  const m=[];
+  for(let c=0;c<CFG.COLS;c++){m[c]=[];for(let r=0;r<CFG.ROWS;r++){
+    m[c][r]={col:c,row:r,terrain:TERRAIN.SPACE,building:null,owner:null,
+             hp:0,maxHp:0,stockpile:freshStock(),_starved:false};
+  }}
+
+  // Asteroids — near player
+  const astNear=[[3,3],[4,2],[4,3],[5,2],[5,3]];
+  // Asteroids — mid expansion area
+  const astMid=[[8,3],[8,4],[9,3],[9,4],[10,3]];
+  // Asteroids — far mid
+  const astFar=[[15,2],[15,3],[16,2],[16,3]];
+  // Asteroids — near pirates
+  const astPir=[[20,3],[21,3],[21,5],[23,5]];
+  for(const[c,r] of [...astNear,...astMid,...astFar,...astPir]) m[c][r].terrain=TERRAIN.ASTEROID;
+
+  // Nebulae — edges and mid
+  const nebs=[[0,0],[1,0],[0,1],[0,7],[0,8],[1,8],[28,0],[29,0],[29,1],[28,8],[29,7],[29,8],[13,6],[13,7],[14,7]];
+  for(const[c,r] of nebs) m[c][r].terrain=TERRAIN.NEBULA;
+
+  // Player CC at (2,4)
+  setBldg(m,2,4,'command_center','player');
+  m[2][4].stockpile={minerals:lvl.startMinerals,energy:0,food:lvl.startFood,credits:0,stardust:0};
+
+  // Pirate base at (22,4) — no turret for tutorial
+  setBldg(m,22,4,'pirate_base','pirate');
+
+  // Trade posts
+  const tpKeys=Object.keys(TRADE_POSTS);
+  const tpSpots=[[10,5],[16,6],[20,2]];
+  for(let i=0;i<3&&i<tpKeys.length;i++){
+    const[tc,tr]=tpSpots[i];
+    const tpDef=TRADE_POSTS[tpKeys[i]];
+    m[tc][tr].building=tpKeys[i]; m[tc][tr].owner='neutral';
+    m[tc][tr].hp=tpDef.hp; m[tc][tr].maxHp=tpDef.hp;
+  }
+
+  return m;
+}
+
+function genMap() {
+  const lvl=LEVELS[G.level]||LEVELS.frontier;
+  if(G.level==='tutorial') return genTutorialMap();
+
+  const m=[];
+  for(let c=0;c<CFG.COLS;c++){m[c]=[];for(let r=0;r<CFG.ROWS;r++){
+    m[c][r]={col:c,row:r,terrain:TERRAIN.SPACE,building:null,owner:null,
+             hp:0,maxHp:0,stockpile:freshStock(),_starved:false};
+  }}
+
+  const COLS=CFG.COLS, ROWS=CFG.ROWS;
+  const rng=()=>Math.random();
+  const ri=(lo,hi)=>Math.floor(rng()*(hi-lo+1))+lo;
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+  function isEmpty(c,r){return c>=0&&c<COLS&&r>=0&&r<ROWS&&m[c][r].terrain===TERRAIN.SPACE&&!m[c][r].building;}
+  function isClear(c,r){return c>=0&&c<COLS&&r>=0&&r<ROWS&&!m[c][r].building;}
+  function placeCluster(cx,cy,terrain,count,spread){
+    let placed=0;
+    for(let tries=0;tries<count*6&&placed<count;tries++){
+      const nc=clamp(cx+ri(-spread,spread),0,COLS-1);
+      const nr=clamp(cy+ri(-spread,spread),0,ROWS-1);
+      if(isEmpty(nc,nr)){m[nc][nr].terrain=terrain;placed++;}
+    }
+  }
+
+  // ---------- ASTEROIDS ----------
+  const pCol=ri(1,3), pRow=ri(3,5);
+  placeCluster(pCol+2,pRow-1,TERRAIN.ASTEROID,ri(3,5),2);
+  placeCluster(pCol+2,pRow+2,TERRAIN.ASTEROID,ri(2,4),2);
+
+  const astZones=ri(4,6);
+  for(let z=0;z<astZones;z++){
+    const zc=ri(8+Math.floor(z*(COLS-12)/astZones),6+Math.floor((z+1)*(COLS-12)/astZones));
+    const zr=ri(1,ROWS-2);
+    placeCluster(zc,zr,TERRAIN.ASTEROID,ri(3,6),3);
+  }
+
+  // ---------- NEBULAE ----------
+  const nebCount=ri(3,5);
+  for(let n=0;n<nebCount;n++){
+    let nc,nr;
+    if(rng()<0.6){
+      nc=rng()<0.5?ri(0,3):ri(COLS-4,COLS-1);
+      nr=rng()<0.5?ri(0,2):ri(ROWS-3,ROWS-1);
+    } else {
+      nc=ri(5,COLS-5);
+      nr=rng()<0.5?ri(0,1):ri(ROWS-2,ROWS-1);
+    }
+    placeCluster(nc,nr,TERRAIN.NEBULA,ri(2,4),2);
+  }
+
+  // ---------- PLAYER START ----------
+  m[pCol][pRow].terrain=TERRAIN.SPACE;
+  setBldg(m,pCol,pRow,'command_center','player');
+  m[pCol][pRow].stockpile={minerals:lvl.startMinerals,energy:0,food:lvl.startFood,credits:0,stardust:0};
+
+  // ---------- TRADE POSTS ----------
+  const tpKeys=Object.keys(TRADE_POSTS);
+  const tpBand1=Math.floor(COLS*0.3), tpBand2=Math.floor(COLS*0.55);
+  const tradeSpots=[];
+  for(let i=0;i<3&&i<tpKeys.length;i++){
+    let tc,tr,ok=false;
+    for(let tries=0;tries<50;tries++){
+      if(i===0) tc=ri(tpBand1-2,tpBand1+2);
+      else if(i===1) tc=ri(tpBand2-2,tpBand2+2);
+      else tc=ri(tpBand2-1,tpBand2+3);
+      tr=(i===2)?ri(Math.floor(ROWS/2)+1,ROWS-2):((i===0)?ri(2,ROWS-3):ri(1,Math.floor(ROWS/2)-1));
+      if(isClear(tc,tr)&&hexDist(pCol,pRow,tc,tr)>=5){
+        let tooClose=false;
+        for(const s of tradeSpots) if(hexDist(s[0],s[1],tc,tr)<4) tooClose=true;
+        if(!tooClose){ok=true;break;}
+      }
+    }
+    if(ok){
+      m[tc][tr].terrain=TERRAIN.SPACE;
+      const tpDef=TRADE_POSTS[tpKeys[i]];
+      m[tc][tr].building=tpKeys[i];m[tc][tr].owner='neutral';
+      m[tc][tr].hp=tpDef.hp;m[tc][tr].maxHp=tpDef.hp;
+      tradeSpots.push([tc,tr]);
+    }
+  }
+
+  // ---------- PIRATES ----------
+  let pirC=0,pirR=0;
+  if(lvl.pirates){
+    for(let tries=0;tries<50;tries++){
+      pirC=ri(COLS-8,COLS-4);pirR=ri(0,Math.floor(ROWS/2)-1);
+      if(isClear(pirC,pirR)){break;}
+    }
+    m[pirC][pirR].terrain=TERRAIN.SPACE;
+    setBldg(m,pirC,pirR,'pirate_base','pirate');
+    if(lvl.pirateStrength>=1){
+      // Pirate turret adjacent
+      const pirNbs=hexNb(pirC,pirR);
+      for(const nb of pirNbs){
+        if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+          m[nb.col][nb.row].terrain=TERRAIN.SPACE;
+          setBldg(m,nb.col,nb.row,'pirate_turret','pirate');break;
+        }
+      }
+    }
+    if(lvl.pirateStrength>=1.5){
+      // Extra turret for hard modes
+      const pirNbs2=hexNb(pirC,pirR);
+      for(const nb of pirNbs2){
+        if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+          m[nb.col][nb.row].terrain=TERRAIN.SPACE;
+          setBldg(m,nb.col,nb.row,'pirate_turret','pirate');break;
+        }
+      }
+    }
+  }
+
+  // ---------- SECOND PIRATE BASE (gauntlet only) ----------
+  if(lvl.pirates2){
+    let pir2C,pir2R;
+    for(let tries=0;tries<50;tries++){
+      pir2C=ri(COLS-12,COLS-6);pir2R=ri(Math.floor(ROWS/2)+1,ROWS-2);
+      if(isClear(pir2C,pir2R)&&hexDist(pirC,pirR,pir2C,pir2R)>=4){break;}
+    }
+    m[pir2C][pir2R].terrain=TERRAIN.SPACE;
+    setBldg(m,pir2C,pir2R,'pirate_base','pirate');
+    const pir2Nbs=hexNb(pir2C,pir2R);
+    for(const nb of pir2Nbs){
+      if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+        m[nb.col][nb.row].terrain=TERRAIN.SPACE;
+        setBldg(m,nb.col,nb.row,'pirate_turret','pirate');break;
+      }
+    }
+  }
+
+  // ---------- RIVAL ----------
+  if(lvl.rival){
+    let rivC,rivR;
+    for(let tries=0;tries<50;tries++){
+      rivC=ri(COLS-8,COLS-4);rivR=ri(Math.floor(ROWS/2)+1,ROWS-1);
+      if(isClear(rivC,rivR)&&(pirC===0||hexDist(pirC,pirR,rivC,rivR)>=4)){break;}
+    }
+    m[rivC][rivR].terrain=TERRAIN.SPACE;
+    setBldg(m,rivC,rivR,'rival_hq','rival');
+    const rMin=lvl.rivalStartMinerals||20, rFood=lvl.rivalStartFood||8;
+    m[rivC][rivR].stockpile={minerals:rMin,energy:0,food:rFood,credits:0,stardust:0};
+
+    // Guarantee asteroids and nebulas near rival
+    placeCluster(rivC-1,rivR-1,TERRAIN.ASTEROID,ri(3,5),2);
+    placeCluster(rivC+2,rivR+1,TERRAIN.ASTEROID,ri(2,4),2);
+    placeCluster(rivC-2,rivR+1,TERRAIN.NEBULA,ri(2,3),2);
+
+    const rivNbs=hexNb(rivC,rivR);
+    // Place mine on adjacent asteroid
+    let rivPlaced=0;
+    for(const nb of rivNbs){
+      if(rivPlaced>=1) break;
+      if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS&&m[nb.col][nb.row].terrain===TERRAIN.ASTEROID){
+        setBldg(m,nb.col,nb.row,'rival_mine','rival');
+        rivPlaced++;
+      }
+    }
+    if(rivPlaced===0){
+      for(const nb of rivNbs){
+        if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+          m[nb.col][nb.row].terrain=TERRAIN.ASTEROID;
+          setBldg(m,nb.col,nb.row,'rival_mine','rival');
+          rivPlaced++; break;
+        }
+      }
+    }
+    // Place turret
+    for(const nb of rivNbs){
+      if(rivPlaced>=2) break;
+      if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+        m[nb.col][nb.row].terrain=TERRAIN.SPACE;
+        setBldg(m,nb.col,nb.row,'rival_turret','rival');
+        rivPlaced++;
+      }
+    }
+    // Place solar
+    for(const nb of rivNbs){
+      if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+        m[nb.col][nb.row].terrain=TERRAIN.SPACE;
+        setBldg(m,nb.col,nb.row,'rival_solar','rival');
+        break;
+      }
+    }
+
+    // Extra buildings for hard modes
+    if(lvl.rivalExtraBuildings){
+      // Second solar + hydro farm
+      for(const nb of rivNbs){
+        if(isClear(nb.col,nb.row)&&nb.col>=0&&nb.col<COLS&&nb.row>=0&&nb.row<ROWS){
+          m[nb.col][nb.row].terrain=TERRAIN.SPACE;
+          setBldg(m,nb.col,nb.row,'rival_solar','rival'); break;
+        }
+      }
+      // Place farm on a 2nd-ring hex
+      const ring2=[];
+      for(const nb of rivNbs){
+        for(const nb2 of hexNb(nb.col,nb.row)){
+          if(isClear(nb2.col,nb2.row)&&nb2.col>=0&&nb2.col<COLS&&nb2.row>=0&&nb2.row<ROWS) ring2.push(nb2);
+        }
+      }
+      for(const nb2 of ring2){
+        if(isClear(nb2.col,nb2.row)){
+          m[nb2.col][nb2.row].terrain=TERRAIN.SPACE;
+          setBldg(m,nb2.col,nb2.row,'rival_hydro','rival'); break;
+        }
+      }
+    }
+  }
+
+  return m;
+}
+
+function setBldg(m,c,r,key,owner){
+  const def=BLDG[key]||EBLDG[key]||TRADE_POSTS[key];
+  m[c][r].building=key; m[c][r].owner=owner;
+  m[c][r].hp=def.hp; m[c][r].maxHp=def.hp;
+}
+
+function genStars(){
+  starField=[];
+  for(let i=0;i<CFG.STARS;i++) starField.push({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    r:Math.random()*1.3+0.3, a:Math.random()*0.5+0.15
+  });
+}
+
+// ============================================================
+// CONNECTIVITY (per-cluster BFS — each group of adjacent
+// player buildings forms its own energy network)
+// ============================================================
+function getPlayerClusters(){
+  if(_clusterCache) return _clusterCache;
+  const visited=new Set();
+  const clusters=[];
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const key=hk(c,r);
+    if(visited.has(key)) continue;
+    const h=G.map[c][r];
+    if(h.owner!=='player'||!h.building) continue;
+    // BFS to find this cluster
+    const cluster=new Set();
+    const queue=[{col:c,row:r}];
+    cluster.add(key); visited.add(key);
+    while(queue.length>0){
+      const cur=queue.shift();
+      for(const nb of hexNb(cur.col,cur.row)){
+        const nk=hk(nb.col,nb.row);
+        if(!visited.has(nk)&&G.map[nb.col][nb.row].owner==='player'&&G.map[nb.col][nb.row].building){
+          visited.add(nk); cluster.add(nk); queue.push(nb);
+        }
+      }
+    }
+    clusters.push(cluster);
+  }
+  _clusterCache=clusters;
+  return clusters; // array of Set<hexKey>
+}
+
+// Convenience: flat set of all connected player buildings (for build-menu adjacency etc.)
+function getConnectedSet(){
+  const all=new Set();
+  for(const cl of getPlayerClusters()) for(const k of cl) all.add(k);
+  return all;
+}
+
+// ============================================================
+// RESOURCE HELPERS
+// ============================================================
+function tileCost(cost){
+  const tc={};
+  for(const[res,amt] of Object.entries(cost)) if(res==='minerals'||res==='food'||res==='stardust') tc[res]=amt;
+  return tc;
+}
+function creditCost(cost){ return cost.credits||0; }
+
+function adjSources(c,r){
+  const out=[];
+  const h=G.map[c][r];
+  if(h.owner==='player'&&h.building) out.push(h);
+  for(const nb of hexNb(c,r)){
+    const a=G.map[nb.col][nb.row];
+    if(a.owner==='player'&&a.building) out.push(a);
+  }
+  return out;
+}
+
+function sumAdj(c,r){
+  const t=freshStock();
+  for(const s of adjSources(c,r)) for(const res of TILE_RES) t[res]+=s.stockpile[res];
+  return t;
+}
+
+function canGather(c,r,cost){
+  const a=sumAdj(c,r);
+  for(const[res,amt] of Object.entries(cost)){
+    if(res==='energy'||res==='credits') continue;
+    if((a[res]||0)<amt) return false;
+  }
+  return true;
+}
+
+function doGather(c,r,cost){
+  const srcs=adjSources(c,r);
+  for(const[res,amt] of Object.entries(cost)){
+    if(res==='energy'||res==='credits') continue;
+    let need=amt;
+    for(const s of srcs){const take=Math.min(s.stockpile[res]||0,need);s.stockpile[res]-=take;need-=take;if(need<=0)break;}
+  }
+}
+
+
+
+function totalRes(){
+  const t=freshStock();
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    if(G.map[c][r].owner==='player'&&G.map[c][r].building)
+      for(const res of TILE_RES) t[res]+=G.map[c][r].stockpile[res];
+  }
+  for(const s of G.ships) if(s.owner==='player') for(const res of TILE_RES) t[res]+=(s.cargo[res]||0);
+  t.credits=G.credits;
+  t.energy=G.energySurplus;
+  return t;
+}
+
+// ============================================================
+// PRODUCTION
+// ============================================================
+// Processing priority: producers first, then consumers by complexity
+const PROD_ORDER=['command_center','solar_array','relay','mine','dust_siphon','hydroponics','habitat','factory','spaceport','research_lab','defense_turret','missile_battery'];
+
+function getBuildingsByOrder(){
+  const list=[];
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const h=G.map[c][r];
+    if(h.owner==='player'&&h.building&&BLDG[h.building]) list.push({c,r,h,def:BLDG[h.building]});
+  }
+  list.sort((a,b)=>{
+    const ai=PROD_ORDER.indexOf(a.h.building), bi=PROD_ORDER.indexOf(b.h.building);
+    return (ai<0?99:ai)-(bi<0?99:bi);
+  });
+  return list;
+}
+
+function effectiveEProd(building){
+  const def=BLDG[building]; if(!def) return 0;
+  let e=def.prod.energy||0;
+  if(building==='reactor'&&hasUpgrade('harmonic_containment')) e+=UPGRADES.harmonic_containment.bonus;
+  return e;
+}
+
+function runProduction(){
+  const clusters=getPlayerClusters();
+  const ordered=getBuildingsByOrder();
+
+  // Phase 0: Energy per cluster — each cluster tracks its own energy independently
+  const energyOk=new Map();
+  let totalEProd=0, totalECons=0;
+  for(const cluster of clusters){
+    let eProd=0, eCons=0;
+    for(const key of cluster){
+      const c=Math.floor(key/100), r=key%100;
+      const h=G.map[c][r];
+      const def=BLDG[h.building]; if(!def) continue;
+      eProd+=effectiveEProd(h.building);
+      eCons+=(def.cons.energy||0);
+    }
+    const ok=eProd>=eCons;
+    for(const key of cluster) energyOk.set(key,ok);
+    totalEProd+=eProd; totalECons+=eCons;
+  }
+  G.energySurplus=totalEProd-totalECons;
+
+  // Phase 1+2: Consume then produce per building, in priority order
+  for(const b of ordered){
+    const {c,r,h,def}=b;
+    const key=hk(c,r);
+    const needsEnergy=(def.cons.energy||0)>0;
+
+    // Energy check
+    if(needsEnergy&&energyOk.get(key)!==true){h._starved=true;h._starveReason='energy';continue;}
+
+    // Tile consumption (adjacent hexes only)
+    const tc=tileCost(def.cons);
+    if(Object.keys(tc).length>0){
+      if(canGather(c,r,tc)){doGather(c,r,tc);h._starved=false;h._starveReason=null;}
+      else{h._starved=true;h._starveReason='resources';continue;}
+    } else {
+      h._starved=false;h._starveReason=null;
+    }
+
+    // Produce immediately (so next buildings can use the output)
+    if(!energyOk.has(key)) continue;
+    for(const[res,amt] of Object.entries(def.prod||{})){
+      if(res==='energy') continue;
+      if(res==='credits'){G.credits+=amt;continue;}
+      h.stockpile[res]=(h.stockpile[res]||0)+amt;
+    }
+  }
+
+  // Phase 3: Population cap
+  recalcPopCap();
+
+  // Phase 4: Pop over-cap — deactivate lowest-priority buildings
+  let used=popUsed();
+  if(used>G.popCap){
+    // Walk buildings in reverse priority order (least important first)
+    const rev=[...ordered].reverse();
+    for(const b of rev){
+      if(used<=G.popCap) break;
+      const pop=b.def.pop||0;
+      if(pop<=0) continue;
+      if(b.h._starved) continue; // already not counting
+      if(b.h.building==='command_center') continue;
+      b.h._starved=true; b.h._starveReason='overpop';
+      used-=pop;
+      log(`${b.def.name} at (${b.c},${b.r}) shut down — not enough workers.`,'bad');
+    }
+    recalcPopCap(); // recalc since starved popCap buildings now excluded
+  }
+}
+
+function recalcPopCap(){
+  let cap=0;
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const h=G.map[c][r];
+    if(h.owner!=='player'||!h.building) continue;
+    const def=BLDG[h.building];
+    if(def&&def.popCap&&!h._starved) cap+=def.popCap;
+  }
+  G.popCap=cap;
+}
+
+// Immediate energy/starve re-check — call after any structural change
+function recheckEnergy(){
+  dirtyCache();
+  const clusters=getPlayerClusters();
+  for(const cluster of clusters){
+    let eProd=0, eCons=0;
+    for(const key of cluster){
+      const c=Math.floor(key/100), r=key%100;
+      const def=BLDG[G.map[c][r].building]; if(!def) continue;
+      eProd+=effectiveEProd(G.map[c][r].building);
+      eCons+=(def.cons.energy||0);
+    }
+    const ok=eProd>=eCons;
+    for(const key of cluster){
+      const c=Math.floor(key/100), r=key%100;
+      const h=G.map[c][r];
+      const def=BLDG[h.building]; if(!def) continue;
+      const needsEnergy=(def.cons.energy||0)>0;
+      if(needsEnergy&&!ok){h._starved=true;h._starveReason='energy';}
+      else if(h._starveReason==='energy'){h._starved=false;h._starveReason=null;}
+    }
+  }
+  G.energySurplus=0;
+  for(const cluster of clusters){
+    for(const key of cluster){
+      const c=Math.floor(key/100), r=key%100;
+      const def=BLDG[G.map[c][r].building]; if(!def) continue;
+      G.energySurplus+=effectiveEProd(G.map[c][r].building)-(def.cons.energy||0);
+    }
+  }
+  recalcPopCap();
+}
+
+// ============================================================
+// BUILDING
+// ============================================================
+function popUsed(){
+  let used=0;
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const h=G.map[c][r];
+    if(h.owner==='player'&&h.building){
+      const def=BLDG[h.building];
+      if(def) used+=(def.pop||0);
+    }
+  }
+  return used;
+}
+
+function popFree(){ return G.popCap-popUsed(); }
+
+function isAdjPlayer(c,r){
+  return hexNb(c,r).some(n=>G.map[n.col][n.row].owner==='player'&&G.map[n.col][n.row].building);
+}
+
+function canBuildAt(key,c,r){
+  const def=BLDG[key];
+  if(!def||def.canBuild===false) return false;
+  const h=G.map[c][r];
+  if(h.building||(h.owner&&h.owner!=='player')) return false;
+  if(def.needsTerrain&&h.terrain!==def.needsTerrain) return false;
+  if(!isAdjPlayer(c,r)) return false;
+  if(!canGather(c,r,tileCost(def.cost))) return false;
+  if(G.credits<creditCost(def.cost)) return false;
+  if((def.pop||0)>popFree()) return false;
+  return true;
+}
+
+// ============================================================
+// UPGRADES
+// ============================================================
+function hasUpgrade(key){ return !!G.upgrades[key]; }
+
+function canResearch(key,labC,labR){
+  if(hasUpgrade(key)) return false;
+  const u=UPGRADES[key]; if(!u) return false;
+  if(!canGather(labC,labR,tileCost(u.cost))) return false;
+  if(G.credits<creditCost(u.cost)) return false;
+  return true;
+}
+
+function doResearch(key,labC,labR){
+  if(!canResearch(key,labC,labR)) return;
+  const u=UPGRADES[key];
+  doGather(labC,labR,tileCost(u.cost));
+  G.credits-=creditCost(u.cost);
+  G.upgrades[key]=true;
+  log(`Researched: ${u.name}!`,'good');
+  applyUpgrade(key);
+  updateAll();
+}
+
+function applyUpgrade(key){
+  const u=UPGRADES[key];
+  if(u.effect==='ship_speed'){
+    for(const s of G.ships) if(s.owner==='player') s.speed+=u.bonus;
+  }
+  if(u.effect==='ship_hp'){
+    for(const s of G.ships) if(s.owner==='player'){s.maxHp+=u.bonus;s.hp+=u.bonus;}
+  }
+  if(u.effect==='ship_range'){
+    for(const s of G.ships) if(s.owner==='player'&&s.combat>0) s.range+=u.bonus;
+  }
+  if(u.effect==='building_toughness'){
+    for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+      const h=G.map[c][r];
+      if(h.owner==='player'&&h.building&&BLDG[h.building]){
+        h.maxHp+=u.bonusHp; h.hp+=u.bonusHp;
+      }
+    }
+  }
+  // turret_damage and reactor_energy are applied dynamically in combat/energy calcs
+}
+
+function doBuild(key,c,r){
+  if(!canBuildAt(key,c,r)) return;
+  const def=BLDG[key];
+  doGather(c,r,tileCost(def.cost));
+  G.credits-=creditCost(def.cost);
+  const h=G.map[c][r];
+  h.building=key; h.owner='player'; h.hp=def.hp; h.maxHp=def.hp;
+  // Apply ceramic plating upgrade to new buildings
+  if(hasUpgrade('ceramic_plating')){
+    const u=UPGRADES.ceramic_plating;
+    h.maxHp+=u.bonusHp; h.hp+=u.bonusHp;
+  }
+  h.stockpile=freshStock(); h._starved=false;
+  log(`Built ${def.name} at (${c},${r}).`,'info');
+  recheckEnergy(); updateAll();
+  tutorialCheck();
+}
+
+function doDemolish(c,r){
+  const h=G.map[c][r];
+  if(!h.building||h.owner!=='player'||h.building==='command_center') return;
+  const def=BLDG[h.building];
+  const name=def?def.name:h.building;
+  // Refund 50% to adjacent stockpiles (tile res) and credits bank
+  if(def){
+    const targets=adjSources(c,r).filter(t=>t!==h);
+    const tc=tileCost(def.cost);
+    if(targets.length>0) for(const[res,amt] of Object.entries(tc)) targets[0].stockpile[res]+=Math.floor(amt*0.5);
+    G.credits+=Math.floor(creditCost(def.cost)*0.5);
+  }
+  // Transfer remaining stockpile to adjacent
+  const adjs=adjSources(c,r).filter(t=>t!==h);
+  if(adjs.length>0) for(const res of TILE_RES){adjs[0].stockpile[res]+=(h.stockpile[res]||0);}
+  h.building=null; h.owner=null; h.hp=0; h.maxHp=0;
+  h.stockpile=freshStock(); h._starved=false;
+  log(`Demolished ${name}. 50% refunded.`,'info');
+  recheckEnergy(); selectedHex=null; updateAll();
+}
+
+// ============================================================
+// RELAY TRANSFER
+// ============================================================
+function relayPull(rc,rr,sc,sr){
+  const relay=G.map[rc][rr];
+  if(relay.building!=='relay'||relay._relayUsed) return;
+  const src=G.map[sc][sr];
+  for(const res of TILE_RES){
+    const amt=src.stockpile[res]||0;
+    if(amt>0){relay.stockpile[res]=(relay.stockpile[res]||0)+amt;src.stockpile[res]=0;}
+  }
+  relay._relayUsed=true;
+  log(`Relay (${rc},${rr}) pulled resources from (${sc},${sr}).`,'info');
+  dirtyCache(); updateAll();
+}
+
+function relayPush(rc,rr,tc,tr){
+  const relay=G.map[rc][rr];
+  if(relay.building!=='relay'||relay._relayUsed) return;
+  const tgt=G.map[tc][tr];
+  for(const res of TILE_RES){
+    const amt=relay.stockpile[res]||0;
+    if(amt>0){tgt.stockpile[res]=(tgt.stockpile[res]||0)+amt;relay.stockpile[res]=0;}
+  }
+  relay._relayUsed=true;
+  log(`Relay (${rc},${rr}) pushed resources to (${tc},${tr}).`,'info');
+  dirtyCache(); updateAll();
+}
+
+function resetRelays(){
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
+    if(G.map[c][r].building==='relay') G.map[c][r]._relayUsed=false;
+}
+
+// ============================================================
+// TRADING
+// ============================================================
+function doTrade(c,r,dealIdx){
+  const hex=G.map[c][r];
+  const tpDef=TRADE_POSTS[hex.building];
+  if(!tpDef||hex.owner!=='neutral') return;
+  const deal=tpDef.deals[dealIdx];
+  if(!deal) return;
+
+  const pShips=shipsAt(c,r,'player').filter(s=>s.cargoMax>0);
+  if(pShips.length===0) return;
+
+  if(deal.type==='buy'){
+    // Player sells resource → gets credits
+    const ship=pShips.find(s=>(s.cargo[deal.resource]||0)>=deal.amount);
+    if(!ship) return;
+    ship.cargo[deal.resource]-=deal.amount;
+    G.credits+=deal.price;
+    log(`Traded ${deal.amount} ${deal.resource} for ${deal.price}¤ at ${tpDef.name}.`,'info');
+  } else {
+    // Player buys resource ← spends credits
+    if(G.credits<deal.price) return;
+    const ship=pShips.find(s=>shipSpace(s)>=deal.amount);
+    if(!ship) return;
+    G.credits-=deal.price;
+    ship.cargo[deal.resource]=(ship.cargo[deal.resource]||0)+deal.amount;
+    log(`Bought ${deal.amount} ${deal.resource} for ${deal.price}¤ at ${tpDef.name}.`,'info');
+  }
+  dirtyCache(); updateAll();
+}
+
+// ============================================================
+// SHIPS
+// ============================================================
+function spawnShip(type,owner,c,r){
+  const def=SHIPS[type];
+  const ship={id:nextShipId++,type,owner,col:c,row:r,
+    hp:def.hp,maxHp:def.hp,combat:def.combat,speed:def.speed,
+    range:def.range||1, armor:def.armor||0,
+    cargoMax:def.cargo, cargo:freshStock(), movesLeft:0, hasAttacked:false, attacksLeft:def.attacks||1};
+  // Apply upgrades to player ships
+  if(owner==='player'){
+    if(hasUpgrade('plasma_thrusters')) ship.speed+=UPGRADES.plasma_thrusters.bonus;
+    if(hasUpgrade('reinforced_hulls')){ship.maxHp+=UPGRADES.reinforced_hulls.bonus;ship.hp+=UPGRADES.reinforced_hulls.bonus;}
+    if(hasUpgrade('extended_sensors')&&ship.combat>0) ship.range+=UPGRADES.extended_sensors.bonus;
+  }
+  G.ships.push(ship);
+  return ship;
+}
+
+function buildShip(type){
+  if(!selectedHex) return;
+  const h=G.map[selectedHex.col][selectedHex.row];
+  if(h.building!=='spaceport'||h.owner!=='player') return;
+  const def=SHIPS[type];
+  const tc=tileCost(def.cost);
+  const cc=creditCost(def.cost);
+  if(!canGather(selectedHex.col,selectedHex.row,tc)||G.credits<cc){log("Not enough resources for "+def.name+".","bad");return;}
+  doGather(selectedHex.col,selectedHex.row,tc);
+  G.credits-=cc;
+  const ship=spawnShip(type,'player',selectedHex.col,selectedHex.row);
+  ship.movesLeft=0;
+  log(`Built ${def.name} at Spaceport (${selectedHex.col},${selectedHex.row}).`,'info');
+  dirtyCache(); updateAll();
+  tutorialCheck();
+}
+
+function repairCost(ship){return Math.ceil((SHIPS[ship.type].cost.minerals||1)/3);}
+function repairAmt(ship){return Math.ceil(ship.maxHp/3);}
+function canRepairShip(ship){
+  if(ship.hp>=ship.maxHp) return false;
+  if(ship.movesLeft<=0&&ship.hasAttacked) return false;
+  const hex=G.map[ship.col][ship.row];
+  const onYard=(hex.owner==='player'&&hex.building==='spaceport')||(hex.owner==='rival'&&hex.building==='rival_spaceport');
+  if(!onYard||hex.owner!==ship.owner) return false;
+  // Check minerals available adjacent
+  const cost=repairCost(ship);
+  if(ship.owner==='player') return canGather(ship.col,ship.row,{minerals:cost});
+  if(ship.owner==='rival') return rivalCanGather(ship.col,ship.row,{minerals:cost});
+  return false;
+}
+function doRepairShip(id){
+  const ship=shipById(id); if(!ship||!canRepairShip(ship)) return;
+  const cost=repairCost(ship);
+  doGather(ship.col,ship.row,{minerals:cost});
+  const heal=Math.min(repairAmt(ship),ship.maxHp-ship.hp);
+  ship.hp+=heal;
+  ship.movesLeft=0; ship.hasAttacked=true; ship.attacksLeft=0;
+  log(`${SHIPS[ship.type].name} repaired +${heal} HP (cost: ${cost} minerals).`,'info');
+  updateAll();
+}
+
+function shipTotal(s){let t=0;for(const r of TILE_RES)t+=(s.cargo[r]||0);return t;}
+function shipSpace(s){return s.cargoMax-shipTotal(s);}
+function shipById(id){return G.ships.find(s=>s.id===id);}
+function shipsAt(c,r,owner){return G.ships.filter(s=>s.col===c&&s.row===r&&s.hp>0&&(!owner||s.owner===owner));}
+function playerCombat(){return G.ships.filter(s=>s.owner==='player'&&s.hp>0).reduce((a,s)=>a+s.combat,0);}
+
+function isHostile(a,b){
+  if(a===b) return false;
+  if(a==='neutral'||b==='neutral') return false;
+  return true;
+}
+
+function moveShipTo(ship,c,r){
+  const dist=hexDist(ship.col,ship.row,c,r);
+  if(dist>ship.movesLeft||dist===0) return false;
+  ship.col=c; ship.row=r; ship.movesLeft-=dist;
+  // Combat with enemy ships at destination (melee — same hex)
+  const hostiles=G.ships.filter(s=>s.col===c&&s.row===r&&s.id!==ship.id&&isHostile(ship.owner,s.owner)&&s.hp>0);
+  for(const enemy of [...hostiles]){
+    if(ship.hp<=0) break;
+    resolveCombat(ship,enemy,0);
+  }
+  updateAll();
+  tutorialCheck();
+  return true;
+}
+
+function doLoad(sid,res){
+  const ship=shipById(sid); if(!ship||ship.owner!=='player') return;
+  const h=G.map[ship.col][ship.row];
+  const avail=h.stockpile[res]||0, space=shipSpace(ship);
+  const amt=Math.min(avail,space);
+  if(amt<=0) return;
+  h.stockpile[res]-=amt; ship.cargo[res]+=amt;
+  log(`Loaded ${amt} ${res} onto ${SHIPS[ship.type].name}.`,'info');
+  updateAll();
+  tutorialCheck();
+}
+
+function doUnload(sid,res){
+  const ship=shipById(sid); if(!ship||ship.owner!=='player') return;
+  const amt=ship.cargo[res]||0; if(amt<=0) return;
+  const h=G.map[ship.col][ship.row];
+  h.stockpile[res]=(h.stockpile[res]||0)+amt;
+  ship.cargo[res]=0;
+  log(`Unloaded ${amt} ${res} from ${SHIPS[ship.type].name}.`,'info');
+  updateAll();
+  tutorialCheck();
+}
+
+function resetShips(){
+  const spdBonus=hasUpgrade('plasma_thrusters')?UPGRADES.plasma_thrusters.bonus:0;
+  for(const s of G.ships) if(s.owner==='player'){s.movesLeft=SHIPS[s.type].speed+spdBonus;s.hasAttacked=false;s.attacksLeft=SHIPS[s.type].attacks||1;}
+}
+
+function getReachable(ship){
+  const out=[];
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const d=hexDist(ship.col,ship.row,c,r);
+    if(d>0&&d<=ship.movesLeft) out.push({col:c,row:r});
+  }
+  return out;
+}
+
+// ============================================================
+// COMBAT
+// ============================================================
+function calcDmg(combat,armor){return Math.max(1,combat-(armor||0));}
+
+function resolveCombat(atk,def,dist){
+  const an=SHIPS[atk.type]?.name||atk.type, dn=SHIPS[def.type]?.name||def.type;
+  const atkRange=atk.range||1, defRange=def.range||1;
+  dist=dist||hexDist(atk.col,atk.row,def.col,def.row)||1;
+  const dmgToDef=calcDmg(atk.combat,def.armor||0);
+  def.hp-=dmgToDef;
+  log(`${an} (${atk.owner}) hits ${dn} for ${dmgToDef} dmg${dist>1?' at range '+dist:''}!`,'combat');
+
+  // Defender retaliates only if in melee range (dist<=1) or defender has range >= dist
+  if((def.combat||0)>0&&defRange>=dist){
+    const dmgToAtk=calcDmg(def.combat,atk.armor||0);
+    atk.hp-=dmgToAtk;
+    log(`${dn} retaliates for ${dmgToAtk}!`,'combat');
+  }
+
+  if(def.hp<=0){log(`${dn} (${def.owner}) destroyed!`,atk.owner==='player'?'good':'bad');removeShip(def);}
+  if(atk.hp<=0){log(`${an} (${atk.owner}) destroyed!`,atk.owner==='player'?'bad':'good');removeShip(atk);}
+}
+
+function removeShip(s){
+  const i=G.ships.indexOf(s); if(i>=0) G.ships.splice(i,1);
+  if(selectedShipId===s.id) selectedShipId=null;
+}
+
+function doAttackBldg(sid,tc,tr){
+  const ship=shipById(sid);
+  if(!ship||ship.hasAttacked||ship.combat<=0) return;
+  const h=G.map[tc][tr];
+  if(!h.building||!isHostile(ship.owner,h.owner)) return;
+  const dist=hexDist(ship.col,ship.row,tc,tr);
+  if(dist>(ship.range||1)) return;
+  const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building]; if(!bd) return;
+
+  ship.attacksLeft=(ship.attacksLeft||1)-1;
+  if(ship.attacksLeft<=0) ship.hasAttacked=true;
+  const dmg=calcDmg(ship.combat,bd.armor||0);
+  h.hp-=dmg;
+  log(`${SHIPS[ship.type].name} attacks ${bd.name} for ${dmg} dmg${dist>1?' at range '+dist:''}!`,'combat');
+
+  // Building retaliates only if ship is within building's range
+  const bldgRange=bd.range||1;
+  if((bd.combat||0)>0&&bldgRange>=dist){
+    const retDmg=calcDmg(bd.combat,ship.armor||0);
+    ship.hp-=retDmg;
+    log(`${bd.name} retaliates for ${retDmg}!`,'combat');
+    if(ship.hp<=0){log(`${SHIPS[ship.type].name} destroyed!`,'bad');removeShip(ship);}
+  }
+
+  if(h.hp<=0){
+    log(`${bd.name} at (${tc},${tr}) destroyed!`,ship&&ship.owner==='player'?'good':'bad');
+    const was=h.building;
+    h.building='ruins'; h.owner=null; h.hp=0; h.maxHp=0; h.stockpile=freshStock();
+    recheckEnergy();
+    if(was==='pirate_base') log('The pirate menace is eliminated!','good');
+    if(was==='rival_hq') log('The rival colony has been conquered!','good');
+    if(was==='command_center') log('Your Command Center has been destroyed!','bad');
+    checkEnd();
+  }
+  updateAll();
+}
+
+function doAttackShip(aid,did){
+  const atk=shipById(aid), def=shipById(did);
+  if(!atk||!def||atk.hasAttacked||atk.combat<=0) return;
+  const dist=hexDist(atk.col,atk.row,def.col,def.row);
+  if(dist>(atk.range||1)) return;
+  atk.attacksLeft=(atk.attacksLeft||1)-1;
+  if(atk.attacksLeft<=0) atk.hasAttacked=true;
+  resolveCombat(atk,def,dist);
+  checkEnd(); updateAll();
+}
+
+function hexesInRange(c,r,range){
+  const out=[];
+  for(let dc=-range;dc<=range;dc++) for(let dr=-range;dr<=range;dr++){
+    const nc=c+dc, nr=r+dr;
+    if(nc>=0&&nc<CFG.COLS&&nr>=0&&nr<CFG.ROWS&&hexDist(c,r,nc,nr)<=range)
+      out.push({col:nc,row:nr});
+  }
+  return out;
+}
+
+function turretFire(){
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const h=G.map[c][r];
+    if(!h.building||!h.owner) continue;
+    const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building];
+    if(!bd||(bd.combat||0)===0) continue;
+    if(!h.building.includes('turret')&&h.building!=='defense_turret'&&h.building!=='missile_battery') continue;
+    // Starved turrets don't fire
+    if(h._starved) continue;
+    const range=bd.range||1;
+    const targets=[];
+    for(const pos of hexesInRange(c,r,range)){
+      for(const s of G.ships.filter(sh=>sh.col===pos.col&&sh.row===pos.row&&isHostile(h.owner,sh.owner)&&sh.hp>0))
+        targets.push(s);
+    }
+    for(const t of targets){
+      if(t.hp<=0) continue;
+      let combat=bd.combat||0;
+      if(h.owner==='player'&&hasUpgrade('advanced_targeting')) combat+=UPGRADES.advanced_targeting.bonus;
+      const dmg=calcDmg(combat,t.armor||0);
+      t.hp-=dmg;
+      log(`${bd.name} (${c},${r}) fires on ${SHIPS[t.type]?.name}! ${dmg} dmg.`,'combat');
+      if(t.hp<=0){log(`${SHIPS[t.type]?.name} (${t.owner}) destroyed by turret!`,t.owner==='player'?'bad':'good');removeShip(t);}
+    }
+  }
+}
+
+// ============================================================
+// ENEMY AI
+// ============================================================
+function enemyPhase(){
+  const lvl=LEVELS[G.level]||LEVELS.frontier;
+  if(lvl.pirates){ pirateProd(); pirateSpawn(); pirateMove(); pirateAtk(); }
+  if(lvl.rival){ rivalProduction(); rivalBuildAI(); rivalTransportAI(); rivalShipBuildAI(); rivalCombatAI(); }
+}
+
+function findBldg(key,owner){
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
+    if(G.map[c][r].building===key&&G.map[c][r].owner===owner) return {col:c,row:r};
+  return null;
+}
+function findAllBldg(owner){
+  const out=[];
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
+    if(G.map[c][r].owner===owner&&G.map[c][r].building) out.push({col:c,row:r,h:G.map[c][r]});
+  return out;
+}
+
+// ---- PIRATE AI (unchanged — mindless) ----
+function pirateProd(){
+  if(findBldg('pirate_base','pirate')) G.pirateP+=3+Math.floor(G.turn/8);
+}
+function pirateSpawn(){
+  const pb=findBldg('pirate_base','pirate');
+  if(pb){
+    while(G.pirateP>=10){
+      if(G.pirateP>=18&&G.turn>16&&Math.random()>0.5){
+        spawnE('corvette','pirate',pb); G.pirateP-=18;
+      } else { spawnE('fighter','pirate',pb); G.pirateP-=10; }
+    }
+  }
+}
+function pirateMove(){
+  const es=G.ships.filter(s=>s.owner==='pirate');
+  for(const ship of [...es]){
+    if(ship.hp<=0) continue;
+    ship.movesLeft=SHIPS[ship.type].speed; ship.hasAttacked=false; ship.attacksLeft=SHIPS[ship.type].attacks||1;
+    let nd=Infinity, tgt=null;
+    for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+      if(G.map[c][r].owner==='player'&&G.map[c][r].building){
+        const d=hexDist(ship.col,ship.row,c,r);if(d<nd){nd=d;tgt={col:c,row:r};}
+      }
+    }
+    if(!tgt) continue;
+    let steps=ship.movesLeft;
+    while(steps>0&&ship.hp>0){
+      const nbs=hexNb(ship.col,ship.row);
+      let best=null, bd2=hexDist(ship.col,ship.row,tgt.col,tgt.row);
+      for(const nb of nbs){const d=hexDist(nb.col,nb.row,tgt.col,tgt.row);if(d<bd2){bd2=d;best=nb;}}
+      if(!best) break;
+      ship.col=best.col; ship.row=best.row; steps--;
+      const hostiles=G.ships.filter(s=>s.col===ship.col&&s.row===ship.row&&isHostile('pirate',s.owner)&&s.hp>0);
+      for(const h of [...hostiles]){if(ship.hp<=0)break;resolveCombat(ship,h,0);}
+    }
+  }
+}
+function pirateAtk(){
+  const es=G.ships.filter(s=>s.owner==='pirate'&&s.hp>0&&s.combat>0);
+  for(const ship of [...es]){
+    if(ship.hp<=0) continue;
+    while((ship.attacksLeft||1)>0&&ship.hp>0){
+      const range=ship.range||1;
+      let attacked=false;
+      for(const pos of hexesInRange(ship.col,ship.row,range)){
+        const h=G.map[pos.col][pos.row];
+        if(h.owner==='player'&&h.building&&h.building!=='ruins'){
+          atkBldgAI(ship,pos.col,pos.row); attacked=true; break;
+        }
+      }
+      if(!attacked) break;
+    }
+  }
+}
+
+function spawnE(type,owner,base){
+  const s=spawnShip(type,owner,base.col,base.row);
+  s.movesLeft=SHIPS[type].speed;
+  log(`${owner==='pirate'?'Pirates':'Rivals'} deployed a ${SHIPS[type].name}!`,'bad');
+}
+
+// ---- RIVAL AI — full economy ----
+
+// Rival build order: early-game bootstrap sequence
+const RIVAL_BUILD_ORDER=[
+  'rival_solar','rival_mine','rival_solar','rival_hydro',
+  'rival_habitat','rival_spaceport','rival_turret','rival_solar','rival_mine',
+  'rival_factory','rival_turret','rival_habitat','rival_solar','rival_hydro',
+  'rival_mine','rival_turret','rival_solar',
+];
+
+// ---- Rival economy analysis helpers ----
+
+// Rival resource production — mirrors player's runProduction
+function rivalProduction(){
+  const bldgs=findAllBldg('rival');
+  if(bldgs.length===0) return;
+
+  // BFS clusters for rival energy
+  const visited=new Set();
+  const clusters=[];
+  for(const b of bldgs){
+    const k=hk(b.col,b.row);
+    if(visited.has(k)) continue;
+    const cluster=new Set();
+    const queue=[b];
+    cluster.add(k); visited.add(k);
+    while(queue.length>0){
+      const cur=queue.shift();
+      for(const nb of hexNb(cur.col,cur.row)){
+        const nk=hk(nb.col,nb.row);
+        if(!visited.has(nk)&&G.map[nb.col][nb.row].owner==='rival'&&G.map[nb.col][nb.row].building){
+          visited.add(nk); cluster.add(nk); queue.push({col:nb.col,row:nb.row});
+        }
+      }
+    }
+    clusters.push(cluster);
+  }
+
+  // Energy check per cluster
+  const energyOk=new Map();
+  for(const cluster of clusters){
+    let eProd=0, eCons=0;
+    for(const key of cluster){
+      const c=Math.floor(key/100), r=key%100;
+      const def=EBLDG[G.map[c][r].building]; if(!def) continue;
+      eProd+=(def.prod?.energy||0);
+      eCons+=(def.cons?.energy||0);
+    }
+    const ok=eProd>=eCons;
+    for(const key of cluster) energyOk.set(key,ok);
+  }
+
+  // Produce resources for each rival building
+  for(const b of bldgs){
+    const def=EBLDG[b.h.building]; if(!def||!def.prod) continue;
+    const k=hk(b.col,b.row);
+    const needsE=(def.cons?.energy||0)>0;
+    if(needsE&&!energyOk.get(k)){b.h._starved=true;continue;}
+    b.h._starved=false;
+
+    // Consume tile resources from adjacent rival buildings
+    const cons=def.cons||{};
+    let canProduce=true;
+    for(const[res,amt] of Object.entries(cons)){
+      if(res==='energy') continue;
+      let avail=0;
+      if(b.h.stockpile[res]) avail+=b.h.stockpile[res];
+      for(const nb of hexNb(b.col,b.row)){
+        const a=G.map[nb.col][nb.row];
+        if(a.owner==='rival'&&a.building) avail+=(a.stockpile[res]||0);
+      }
+      if(avail<amt){canProduce=false;b.h._starved=true;break;}
+    }
+    if(!canProduce) continue;
+
+    // Actually consume
+    for(const[res,amt] of Object.entries(cons)){
+      if(res==='energy') continue;
+      let need=amt;
+      if(b.h.stockpile[res]>=need){b.h.stockpile[res]-=need;continue;}
+      need-=(b.h.stockpile[res]||0); b.h.stockpile[res]=0;
+      for(const nb of hexNb(b.col,b.row)){
+        if(need<=0) break;
+        const a=G.map[nb.col][nb.row];
+        if(a.owner==='rival'&&a.building){const take=Math.min(a.stockpile[res]||0,need);a.stockpile[res]-=take;need-=take;}
+      }
+    }
+
+    // Produce
+    for(const[res,amt] of Object.entries(def.prod)){
+      if(res==='energy') continue;
+      if(res==='credits'){G.rivalCredits+=amt;continue;}
+      b.h.stockpile[res]=(b.h.stockpile[res]||0)+amt;
+    }
+  }
+
+  // Pop cap enforcement — mirror player's system
+  let rivalPopCap=0;
+  for(const b of bldgs){
+    const def=EBLDG[b.h.building];
+    if(def&&def.popCap&&!b.h._starved) rivalPopCap+=def.popCap;
+  }
+  let rivalPopUsed=0;
+  for(const b of bldgs){
+    const def=EBLDG[b.h.building];
+    if(def&&(def.pop||0)>0&&!b.h._starved) rivalPopUsed+=(def.pop||0);
+  }
+  if(rivalPopUsed>rivalPopCap){
+    const priority=['rival_relay','rival_turret','rival_factory','rival_mine','rival_hydro','rival_spaceport','rival_habitat','rival_solar','rival_hq'];
+    for(const key of priority){
+      if(rivalPopUsed<=rivalPopCap) break;
+      for(const b of bldgs){
+        if(rivalPopUsed<=rivalPopCap) break;
+        const def=EBLDG[b.h.building];
+        if(b.h.building===key&&!b.h._starved&&(def.pop||0)>0){
+          b.h._starved=true;
+          rivalPopUsed-=(def.pop||0);
+        }
+      }
+    }
+  }
+}
+
+// Rival adjacency check
+function isAdjRival(c,r){
+  return hexNb(c,r).some(n=>G.map[n.col][n.row].owner==='rival'&&G.map[n.col][n.row].building);
+}
+
+// Sum adjacent rival resources
+function rivalAdjRes(c,r){
+  const t=freshStock();
+  const h=G.map[c][r];
+  if(h.owner==='rival'&&h.building) for(const res of TILE_RES) t[res]+=(h.stockpile[res]||0);
+  for(const nb of hexNb(c,r)){
+    const a=G.map[nb.col][nb.row];
+    if(a.owner==='rival'&&a.building) for(const res of TILE_RES) t[res]+=(a.stockpile[res]||0);
+  }
+  return t;
+}
+
+// Can rival gather cost from adjacent
+function rivalCanGather(c,r,cost){
+  const a=rivalAdjRes(c,r);
+  for(const[res,amt] of Object.entries(cost)){
+    if(res==='energy'||res==='credits') continue;
+    if((a[res]||0)<amt) return false;
+  }
+  return true;
+}
+
+// Rival gathers resources from adjacent
+function rivalDoGather(c,r,cost){
+  const srcs=[];
+  const h=G.map[c][r];
+  if(h.owner==='rival'&&h.building) srcs.push(h);
+  for(const nb of hexNb(c,r)){
+    const a=G.map[nb.col][nb.row];
+    if(a.owner==='rival'&&a.building) srcs.push(a);
+  }
+  for(const[res,amt] of Object.entries(cost)){
+    if(res==='energy'||res==='credits') continue;
+    let need=amt;
+    for(const s of srcs){const take=Math.min(s.stockpile[res]||0,need);s.stockpile[res]-=take;need-=take;if(need<=0)break;}
+  }
+}
+
+// Rival builds a structure
+function rivalBuild(key,c,r){
+  const def=EBLDG[key]; if(!def) return;
+  const h=G.map[c][r];
+  const cost=def.cost||{};
+  rivalDoGather(c,r,tileCost(cost));
+  G.rivalCredits-=(cost.credits||0);
+  h.building=key; h.owner='rival'; h.hp=def.hp; h.maxHp=def.hp;
+  h.stockpile=freshStock(); h._starved=false;
+  log(`Rivals built ${def.name}.`,'bad');
+}
+
+function rivalEconStats(){
+  const bldgs=findAllBldg('rival');
+  const counts={};
+  let eProd=0,eCons=0,mProd=0,mCons=0,fProd=0,fCons=0,popCap=0,popUsed=0;
+  let totalMin=0,totalFood=0;
+  for(const b of bldgs){
+    const d=EBLDG[b.h.building]; if(!d) continue;
+    counts[b.h.building]=(counts[b.h.building]||0)+1;
+    if(!b.h._starved){
+      eProd+=(d.prod?.energy||0); eCons+=(d.cons?.energy||0);
+      mProd+=(d.prod?.minerals||0); mCons+=(d.cons?.minerals||0);
+      fProd+=(d.prod?.food||0); fCons+=(d.cons?.food||0);
+      if(d.popCap) popCap+=d.popCap;
+      if(d.pop) popUsed+=d.pop;
+    }
+    for(const res of TILE_RES) totalMin+=(res==='minerals'?(b.h.stockpile[res]||0):0);
+    for(const res of TILE_RES) totalFood+=(res==='food'?(b.h.stockpile[res]||0):0);
+  }
+  return {bldgs,counts,eProd,eCons,mProd,mCons,fProd,fCons,popCap,popUsed,totalMin,totalFood};
+}
+
+// Adaptive build decision — replaces rigid build order after bootstrap
+function rivalNextBuild(){
+  const s=rivalEconStats();
+  const has=k=>(s.counts[k]||0);
+
+  // Phase 1: Follow bootstrap order until exhausted
+  let idx=0;
+  for(const key of RIVAL_BUILD_ORDER){
+    const needed=has(key);
+    let want=0;
+    for(let i=0;i<=idx;i++) if(RIVAL_BUILD_ORDER[i]===key) want++;
+    if(needed<want) return key;
+    idx++;
+  }
+
+  // Phase 2: Adaptive — detect shortages and build what's needed
+  const eNet=s.eProd-s.eCons;
+  const popFree=s.popCap-s.popUsed;
+  const mNet=s.mProd-s.mCons;
+  const fNet=s.fProd-s.fCons;
+
+  // Critical: need pop cap before anything else
+  if(popFree<=1) return 'rival_habitat';
+  // Critical: need energy before we can power new buildings
+  if(eNet<4) return 'rival_solar';
+  // Need food to feed habitats
+  if(fNet<=1) return 'rival_hydro';
+  // Need minerals to keep building
+  if(mNet<3) return 'rival_mine';
+  // Need credits for ships
+  if(G.rivalCredits<10&&has('rival_factory')<3) return 'rival_factory';
+  // Defense
+  if(has('rival_turret')<Math.floor(s.bldgs.length/4)+1) return 'rival_turret';
+  // Scale economy further
+  if(has('rival_mine')<has('rival_solar')) return 'rival_mine';
+  return 'rival_solar';
+}
+
+// Score a candidate build site — higher is better
+function rivalScoreSite(c,r,bldgKey){
+  let score=0;
+  const def=EBLDG[bldgKey];
+
+  // Connectivity bonus: prefer sites adjacent to more rival buildings (tighter cluster)
+  let adjRivalCount=0;
+  for(const nb of hexNb(c,r)){
+    if(G.map[nb.col][nb.row].owner==='rival'&&G.map[nb.col][nb.row].building) adjRivalCount++;
+  }
+  score+=adjRivalCount*5;
+
+  // Resource availability bonus: prefer sites with adjacent stockpiles
+  const adj=rivalAdjRes(c,r);
+  score+=Math.min(adj.minerals,20); // cap so this doesn't dominate
+
+  // For mines: prefer sites near more asteroid hexes (future mine expansion)
+  if(bldgKey==='rival_mine'){
+    for(const nb of hexNb(c,r)){
+      if(G.map[nb.col][nb.row].terrain===TERRAIN.ASTEROID&&!G.map[nb.col][nb.row].building) score+=8;
+    }
+  }
+
+  // For farms/habitats: prefer sites near existing food producers
+  if(bldgKey==='rival_hydro'||bldgKey==='rival_habitat'){
+    for(const nb of hexNb(c,r)){
+      const a=G.map[nb.col][nb.row];
+      if(a.owner==='rival'&&(a.building==='rival_hydro'||a.building==='rival_hq')) score+=4;
+    }
+  }
+
+  // For turrets: prefer sites toward the player (defensive frontier)
+  if(bldgKey==='rival_turret'){
+    const hq=findBldg('rival_hq','rival');
+    const cc=findBldg('command_center','player');
+    if(hq&&cc){
+      const distToPlayer=hexDist(c,r,cc.col,cc.row);
+      const hqToPlayer=hexDist(hq.col,hq.row,cc.col,cc.row);
+      if(distToPlayer<hqToPlayer) score+=10; // frontline bonus
+    }
+  }
+
+  // For solar: prefer sites in energy-deficient clusters
+  if(bldgKey==='rival_solar'){
+    // Check if adjacent buildings are energy-starved
+    for(const nb of hexNb(c,r)){
+      const a=G.map[nb.col][nb.row];
+      if(a.owner==='rival'&&a._starved) score+=8;
+    }
+  }
+
+  // Penalty for being too far from HQ (overextension)
+  const hq=findBldg('rival_hq','rival');
+  if(hq){
+    const distHQ=hexDist(c,r,hq.col,hq.row);
+    if(distHQ>6) score-=distHQ*2;
+  }
+
+  return score;
+}
+
+// Rival build AI — tries to place buildings, multiple per turn
+function rivalBuildAI(){
+  if(!findBldg('rival_hq','rival')) return;
+  const maxBuilds=Math.min(3,1+Math.floor(G.turn/10)); // scale up over time
+
+  for(let buildAttempt=0;buildAttempt<maxBuilds;buildAttempt++){
+    const want=rivalNextBuild();
+    if(!want) break;
+    const def=EBLDG[want]; if(!def) break;
+    const cost=def.cost||{};
+
+    // Pop check
+    if((def.pop||0)>0){
+      const bldgs=findAllBldg('rival');
+      let popCap=0, popUsed=0;
+      for(const b of bldgs){
+        const bd=EBLDG[b.h.building]; if(!bd) continue;
+        if(bd.popCap&&!b.h._starved) popCap+=bd.popCap;
+        if((bd.pop||0)>0&&!b.h._starved) popUsed+=bd.pop;
+      }
+      if(popUsed+(def.pop||0)>popCap) break;
+    }
+
+    // Can we afford credits?
+    if(G.rivalCredits<(cost.credits||0)) break;
+
+    // Find valid build sites adjacent to rival buildings
+    const candidates=[];
+    for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+      const h=G.map[c][r];
+      if(h.building||h.owner) continue;
+      if(def.needsTerrain&&h.terrain!==def.needsTerrain) continue;
+      if(!isAdjRival(c,r)) continue;
+      candidates.push({col:c,row:r,score:rivalScoreSite(c,r,want)});
+    }
+    if(candidates.length===0) break;
+
+    // Sort by score descending — best site first
+    candidates.sort((a,b)=>b.score-a.score);
+
+    // Try sites in score order
+    let built=false;
+    for(const site of candidates){
+      if(rivalCanGather(site.col,site.row,tileCost(cost))){
+        rivalBuild(want,site.col,site.row);
+        built=true;
+        break;
+      }
+    }
+    if(!built) break; // no affordable site — stop trying this turn
+  }
+}
+
+// Rival transport AI — moves resources using haulers/hovertranspos
+function rivalTransportAI(){
+  const transports=G.ships.filter(s=>s.owner==='rival'&&s.cargoMax>0&&s.hp>0);
+  const bldgs=findAllBldg('rival');
+  if(bldgs.length===0) return;
+
+  // Pre-compute: what does the next planned building need and where?
+  const nextBldgKey=rivalNextBuild();
+  let plannedSite=null, plannedCost=null;
+  if(nextBldgKey){
+    const nextDef=EBLDG[nextBldgKey];
+    if(nextDef){
+      plannedCost=tileCost(nextDef.cost||{});
+      // Find best build site (same logic as rivalBuildAI)
+      const candidates=[];
+      for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+        const h=G.map[c][r];
+        if(h.building||h.owner) continue;
+        if(nextDef.needsTerrain&&h.terrain!==nextDef.needsTerrain) continue;
+        if(!isAdjRival(c,r)) continue;
+        candidates.push({col:c,row:r,score:rivalScoreSite(c,r,nextBldgKey)});
+      }
+      if(candidates.length>0){
+        candidates.sort((a,b)=>b.score-a.score);
+        plannedSite=candidates[0];
+      }
+    }
+  }
+
+  // Pre-compute: buildings at risk of starvation (consuming resources with <3 turns of stock)
+  const atRisk=[];
+  const starved=[];
+  for(const b of bldgs){
+    const bd=EBLDG[b.h.building]; if(!bd) continue;
+    if(b.h._starved&&b.h._starved!==true) continue; // skip energy-starved (transports can't fix)
+    if(b.h._starved){starved.push(b);continue;}
+    const cons=bd.cons||{};
+    for(const[res,amt] of Object.entries(cons)){
+      if(res==='energy') continue;
+      // Check stock of this resource at self + adjacent
+      let avail=(b.h.stockpile[res]||0);
+      for(const nb of hexNb(b.col,b.row)){
+        const a=G.map[nb.col][nb.row];
+        if(a.owner==='rival'&&a.building) avail+=(a.stockpile[res]||0);
+      }
+      if(avail<amt*3){atRisk.push({b,res,need:amt*3-avail});break;}
+    }
+  }
+
+  // Track which targets are already claimed by a transport this turn
+  const claimed=new Set();
+
+  for(const ship of transports){
+    ship.movesLeft=SHIPS[ship.type].speed;
+    const total=shipTotal(ship);
+
+    // Determine a delivery target first, then decide pickup vs delivery
+    let target=null, targetScore=-Infinity, targetReason='';
+
+    // --- Find delivery target for loaded transports, OR a reason to go pick up ---
+
+    // Priority 1: Actually starved buildings we can help
+    for(const b of starved){
+      const bk=hk(b.col,b.row);
+      if(claimed.has(bk)) continue;
+      const bd=EBLDG[b.h.building]; if(!bd) continue;
+      const cons=bd.cons||{};
+      let useful=false;
+      for(const[res] of Object.entries(cons)){
+        if(res!=='energy'&&(ship.cargo[res]||0)>0) useful=true;
+      }
+      if(b.h.building==='rival_habitat'&&(ship.cargo.food||0)>0) useful=true;
+      if(!useful&&total>0) continue; // loaded but wrong cargo — skip
+      const d=hexDist(ship.col,ship.row,b.col,b.row);
+      const sc=100-d*3;
+      if(sc>targetScore){targetScore=sc;target=b;targetReason='starved';}
+    }
+
+    // Priority 2: Buildings at risk of starvation (preventive)
+    if(!target){
+      for(const entry of atRisk){
+        const bk=hk(entry.b.col,entry.b.row);
+        if(claimed.has(bk)) continue;
+        // Can we help? Either we carry the needed resource, or we're empty and can go get it
+        const hasNeeded=(ship.cargo[entry.res]||0)>0;
+        if(total>0&&!hasNeeded) continue; // loaded with wrong stuff
+        const d=hexDist(ship.col,ship.row,entry.b.col,entry.b.row);
+        const sc=50+entry.need*2-d*3;
+        if(sc>targetScore){targetScore=sc;target=entry.b;targetReason='atrisk';}
+      }
+    }
+
+    // Priority 3: Pre-stage resources at planned build site
+    if(!target&&plannedSite&&plannedCost){
+      const pk=hk(plannedSite.col,plannedSite.row);
+      if(!claimed.has(pk)){
+        // Check what's still needed at the site
+        const siteAdj=rivalAdjRes(plannedSite.col,plannedSite.row);
+        let stillNeeded=false;
+        for(const[res,amt] of Object.entries(plannedCost)){
+          if((siteAdj[res]||0)<amt) stillNeeded=true;
+        }
+        if(stillNeeded){
+          // Either carry relevant resources or go pick them up
+          let hasRelevant=false;
+          for(const[res] of Object.entries(plannedCost)){
+            if((ship.cargo[res]||0)>0) hasRelevant=true;
+          }
+          if(total===0||hasRelevant){
+            target={col:plannedSite.col,row:plannedSite.row,h:G.map[plannedSite.col][plannedSite.row]};
+            targetReason='construct';
+          }
+        }
+      }
+    }
+
+    // Priority 4: HQ as fallback dump (only if loaded)
+    if(!target&&total>0){
+      const hq=findBldg('rival_hq','rival');
+      if(hq){target={col:hq.col,row:hq.row,h:G.map[hq.col][hq.row]};targetReason='dump';}
+    }
+
+    // --- Execute: either deliver or pick up ---
+
+    if(total>0&&target){
+      // DELIVER to target
+      claimed.add(hk(target.col,target.row));
+      moveShipToward(ship,target.col,target.row);
+      if(hexDist(ship.col,ship.row,target.col,target.row)<=1){
+        const nearby=[G.map[ship.col][ship.row],...hexNb(ship.col,ship.row).map(n=>G.map[n.col][n.row])];
+        for(const nb of nearby){
+          if(nb.owner==='rival'&&nb.building){
+            for(const res of TILE_RES){
+              const give=ship.cargo[res]||0;
+              if(give>0){nb.stockpile[res]=(nb.stockpile[res]||0)+give;ship.cargo[res]=0;}
+            }
+          }
+        }
+      }
+    } else if(total===0){
+      // PICK UP — find the best source based on what's needed
+      let needRes=null;
+      if(target&&targetReason==='starved'){
+        const bd=EBLDG[target.h?.building]; 
+        if(bd&&bd.cons) for(const[r] of Object.entries(bd.cons)){if(r!=='energy'){needRes=r;break;}}
+        if(target.h?.building==='rival_habitat') needRes='food';
+      } else if(target&&targetReason==='atrisk'){
+        const entry=atRisk.find(e=>e.b===target);
+        if(entry) needRes=entry.res;
+      } else if(targetReason==='construct'&&plannedCost){
+        const siteAdj=rivalAdjRes(plannedSite.col,plannedSite.row);
+        for(const[res,amt] of Object.entries(plannedCost)){
+          if((siteAdj[res]||0)<amt){needRes=res;break;}
+        }
+      }
+
+      // Find a building that has what we need
+      let bestPickScore=-Infinity, bestPick=null;
+      for(const b of bldgs){
+        const bk=hk(b.col,b.row);
+        if(claimed.has(bk)) continue;
+        // If we know what resource is needed, prefer buildings with that resource
+        let stock=0;
+        if(needRes){
+          stock=(b.h.stockpile[needRes]||0);
+        } else {
+          stock=TILE_RES.reduce((s,r)=>s+(b.h.stockpile[r]||0),0);
+        }
+        if(stock<2) continue;
+        const d=hexDist(ship.col,ship.row,b.col,b.row);
+        const sc=stock*2-d*3;
+        if(sc>bestPickScore){bestPickScore=sc;bestPick=b;}
+      }
+      if(bestPick){
+        claimed.add(hk(bestPick.col,bestPick.row));
+        moveShipToward(ship,bestPick.col,bestPick.row);
+        if(ship.col===bestPick.col&&ship.row===bestPick.row){
+          if(needRes){
+            // Pick up specifically what's needed
+            const take=Math.min(bestPick.h.stockpile[needRes]||0,ship.cargoMax-shipTotal(ship));
+            if(take>0){ship.cargo[needRes]+=take;bestPick.h.stockpile[needRes]-=take;}
+          } else {
+            // Pick up everything
+            for(const res of TILE_RES){
+              const take=Math.min(bestPick.h.stockpile[res]||0,ship.cargoMax-shipTotal(ship));
+              if(take>0){ship.cargo[res]+=take;bestPick.h.stockpile[res]-=take;}
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Move a ship step-by-step toward a target (greedy pathfinding)
+function moveShipToward(ship,tc,tr){
+  let steps=ship.movesLeft;
+  while(steps>0&&ship.hp>0){
+    if(ship.col===tc&&ship.row===tr) break;
+    const nbs=hexNb(ship.col,ship.row);
+    let best=null, bd2=hexDist(ship.col,ship.row,tc,tr);
+    for(const nb of nbs){const d=hexDist(nb.col,nb.row,tc,tr);if(d<bd2){bd2=d;best=nb;}}
+    if(!best) break;
+    ship.col=best.col; ship.row=best.row; steps--;
+    ship.movesLeft--;
+    // Melee combat at new position
+    const hostiles=G.ships.filter(s=>s.col===ship.col&&s.row===ship.row&&isHostile(ship.owner,s.owner)&&s.hp>0);
+    for(const h of [...hostiles]){if(ship.hp<=0)break;resolveCombat(ship,h,0);}
+  }
+}
+
+// Rival ship building at spaceport — counter-builds based on player fleet
+function rivalShipBuildAI(){
+  const sp=findBldg('rival_spaceport','rival');
+  if(!sp) return;
+  const h=G.map[sp.col][sp.row];
+  if(h._starved) return;
+
+  // Count existing rival ships by role
+  const rivShips=G.ships.filter(s=>s.owner==='rival'&&s.hp>0);
+  const rivCombat=rivShips.filter(s=>s.combat>0&&s.cargoMax<=5);
+  const transCount=rivShips.filter(s=>s.cargoMax>5).length;
+  const rivBldgs=findAllBldg('rival').length;
+
+  // Assess player threat
+  const playerShips=G.ships.filter(s=>s.owner==='player'&&s.hp>0);
+  const playerPower=playerShips.reduce((t,s)=>t+s.combat*(s.hp/(s.maxHp||1)),0);
+  const rivalPower=rivCombat.reduce((t,s)=>t+s.combat*(s.hp/(s.maxHp||1)),0);
+  const playerHasHeavy=playerShips.some(s=>s.armor>=2||s.range>=2);
+  const playerHasRange=playerShips.some(s=>s.range>=3);
+
+  // Need transports? (1 per 4 buildings, cap at 3)
+  const needTrans=Math.min(3,Math.max(1,Math.floor(rivBldgs/4)))-transCount;
+
+  // Decide what to build — up to 2 ships per turn if affordable
+  const maxShips=G.turn>15?2:1;
+  for(let i=0;i<maxShips;i++){
+    let toBuild=null;
+
+    if(needTrans>i&&rivalCanGather(sp.col,sp.row,tileCost(SHIPS.hovertranspo.cost))){
+      toBuild='hovertranspo';
+    } else {
+      // Counter-build logic based on player composition
+      const rivCount=rivCombat.length+i; // include ships built this turn
+      const wantPower=playerPower*1.2; // aim for 20% power advantage
+
+      if(rivalPower>=wantPower&&rivCount>=3){
+        // Already strong enough — don't over-build, save resources
+        break;
+      }
+
+      // Heavy counter: if player has armored/ranged ships, build corvettes/starships to match
+      if(playerHasRange&&G.rivalCredits>=10&&rivalCanGather(sp.col,sp.row,tileCost(SHIPS.starship.cost))){
+        toBuild='starship';
+      } else if(playerHasHeavy&&G.rivalCredits>=5&&rivalCanGather(sp.col,sp.row,tileCost(SHIPS.corvette.cost))){
+        toBuild='corvette';
+      } else if(G.turn>20&&G.rivalCredits>=10&&rivalCanGather(sp.col,sp.row,tileCost(SHIPS.starship.cost))){
+        // Late game: prefer heavy ships regardless
+        toBuild='starship';
+      } else if(G.turn>10&&G.rivalCredits>=5&&rivalCanGather(sp.col,sp.row,tileCost(SHIPS.corvette.cost))){
+        toBuild='corvette';
+      } else if(rivCount<4&&G.rivalCredits>=(SHIPS.fighter.cost.credits||0)&&rivalCanGather(sp.col,sp.row,tileCost(SHIPS.fighter.cost))){
+        // Early game or low resources: only build a few fighters as scouts
+        toBuild='fighter';
+      }
+    }
+
+    if(!toBuild) break;
+    const def=SHIPS[toBuild];
+    rivalDoGather(sp.col,sp.row,tileCost(def.cost));
+    G.rivalCredits-=(def.cost.credits||0);
+    const s=spawnShip(toBuild,'rival',sp.col,sp.row);
+    s.movesLeft=0;
+    log(`Rivals built a ${def.name}!`,'bad');
+  }
+}
+
+// Rival combat AI — group tactics, threat assessment, range discipline
+function rivalCombatAI(){
+  // Only real combat ships — exclude transports (cargoMax > 5)
+  const combatShips=G.ships.filter(s=>s.owner==='rival'&&s.combat>0&&s.hp>0&&s.cargoMax<=5);
+  if(combatShips.length===0) return;
+
+  // Initialize movement/attack for all combat ships
+  for(const ship of combatShips){
+    ship.movesLeft=SHIPS[ship.type].speed;
+    ship.hasAttacked=false;
+    ship.attacksLeft=SHIPS[ship.type].attacks||1;
+  }
+
+  // Gather intel: player targets and threat map
+  const playerShips=G.ships.filter(s=>s.owner==='player'&&s.hp>0);
+  const playerBldgs=[];
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    if(G.map[c][r].owner==='player'&&G.map[c][r].building&&G.map[c][r].building!=='ruins')
+      playerBldgs.push({col:c,row:r,h:G.map[c][r]});
+  }
+  if(playerShips.length===0&&playerBldgs.length===0) return;
+
+  // Calculate total rival combat power
+  const rivalPower=combatShips.reduce((t,s)=>t+s.combat,0);
+  const playerPower=playerShips.reduce((t,s)=>t+s.combat,0);
+  const outnumbered=rivalPower<playerPower*0.6;
+
+  // Find rally point — either the spaceport (to group up) or nearest player building
+  const sp=findBldg('rival_spaceport','rival');
+  const hq=findBldg('rival_hq','rival');
+  const rallyBase=sp||hq;
+
+  // Determine if we should rally or attack
+  // Rally if: fewer than 3 combat ships, or significantly outpowered
+  const shouldRally=combatShips.length<3||outnumbered;
+
+  // Group ships by proximity to find natural squads
+  // Ships within 3 hexes of each other are a squad
+  const assigned=new Set();
+  const squads=[];
+  for(const ship of combatShips){
+    if(assigned.has(ship.id)) continue;
+    const squad=[ship];
+    assigned.add(ship.id);
+    for(const other of combatShips){
+      if(assigned.has(other.id)) continue;
+      if(hexDist(ship.col,ship.row,other.col,other.row)<=3){
+        squad.push(other);
+        assigned.add(other.id);
+      }
+    }
+    squads.push(squad);
+  }
+
+  for(const squad of squads){
+    const squadPower=squad.reduce((t,s)=>t+s.combat,0);
+    const squadCenter={col:Math.round(squad.reduce((t,s)=>t+s.col,0)/squad.length),
+                       row:Math.round(squad.reduce((t,s)=>t+s.row,0)/squad.length)};
+
+    // Find nearest player threat to this squad
+    let nearestThreat=null, nearestThreatDist=Infinity;
+    for(const ps of playerShips){
+      const d=hexDist(squadCenter.col,squadCenter.row,ps.col,ps.row);
+      if(d<nearestThreatDist){nearestThreatDist=d;nearestThreat={col:ps.col,row:ps.row,combat:ps.combat,armor:ps.armor||0,range:ps.range||1,type:'ship'};}
+    }
+
+    // Find nearest player building
+    let nearestBldg=null, nearestBldgDist=Infinity;
+    for(const pb of playerBldgs){
+      const d=hexDist(squadCenter.col,squadCenter.row,pb.col,pb.row);
+      if(d<nearestBldgDist){nearestBldgDist=d;nearestBldg={col:pb.col,row:pb.row,type:'building'};}
+    }
+
+    // Decide squad behavior
+    let squadTarget=null;
+
+    if(shouldRally&&rallyBase&&squad.length<3){
+      // Regroup: move toward rally point to form up
+      // But only if we're not already in combat range of the enemy
+      if(nearestThreatDist>4){
+        squadTarget={col:rallyBase.col,row:rallyBase.row,behavior:'rally'};
+      }
+    }
+
+    if(!squadTarget){
+      // Assess if we can take the nearest threat
+      if(nearestThreat){
+        const threatPower=nearestThreat.combat;
+        // If squad can handle the threat (2:1 power or better), engage
+        // If threat is ranged and we're melee-only, we need extra power
+        const squadHasRange=squad.some(s=>(s.range||1)>=2);
+        const needExtraPower=nearestThreat.range>=2&&!squadHasRange;
+        const powerNeeded=needExtraPower?threatPower*3:threatPower*1.5;
+
+        if(squadPower>=powerNeeded||nearestThreatDist<=2){
+          // Engage — we're strong enough or they're right on top of us
+          squadTarget={col:nearestThreat.col,row:nearestThreat.row,behavior:'engage'};
+        } else if(nearestBldg&&nearestThreatDist>5){
+          // Threat is far — go hit buildings instead
+          squadTarget={col:nearestBldg.col,row:nearestBldg.row,behavior:'raid'};
+        } else if(rallyBase){
+          // Can't win — retreat to regroup
+          squadTarget={col:rallyBase.col,row:rallyBase.row,behavior:'rally'};
+        }
+      } else if(nearestBldg){
+        // No enemy ships — go raid buildings
+        squadTarget={col:nearestBldg.col,row:nearestBldg.row,behavior:'raid'};
+      }
+    }
+
+    if(!squadTarget) continue;
+
+    // Execute: move each ship in the squad
+    for(const ship of squad){
+      if(ship.hp<=0) continue;
+      const maxHp=ship.maxHp||SHIPS[ship.type].hp;
+      const range=ship.range||1;
+
+      // Individual retreat check — badly wounded ships retreat regardless of squad
+      if(ship.hp<=maxHp*0.25){
+        const retreatTo=findBldg('rival_spaceport','rival')||findBldg('rival_hq','rival');
+        if(retreatTo){
+          // Repair if on spaceport
+          if(retreatTo.col===ship.col&&retreatTo.row===ship.row&&ship.hp<ship.maxHp){
+            const rc=repairCost(ship);
+            if(rivalCanGather(ship.col,ship.row,{minerals:rc})){
+              rivalDoGather(ship.col,ship.row,{minerals:rc});
+              const heal=Math.min(repairAmt(ship),ship.maxHp-ship.hp);
+              ship.hp+=heal;
+              ship.movesLeft=0;ship.hasAttacked=true;ship.attacksLeft=0;
+              log(`Rival ${SHIPS[ship.type].name} repaired +${heal} HP.`,'bad');
+              continue;
+            }
+          }
+          moveShipToward(ship,retreatTo.col,retreatTo.row);
+          continue;
+        }
+      }
+
+      // Movement based on squad behavior and ship role
+      if(squadTarget.behavior==='rally'){
+        moveShipToward(ship,squadTarget.col,squadTarget.row);
+      } else if(squadTarget.behavior==='engage'||squadTarget.behavior==='raid'){
+        const tDist=hexDist(ship.col,ship.row,squadTarget.col,squadTarget.row);
+
+        if(range>=2){
+          // Ranged ship — approach to attack range, then stop. Back off if too close.
+          if(tDist>range){
+            // Move closer but stop at range
+            let steps=ship.movesLeft;
+            while(steps>0&&ship.hp>0){
+              const curDist=hexDist(ship.col,ship.row,squadTarget.col,squadTarget.row);
+              if(curDist<=range) break;
+              const nbs=hexNb(ship.col,ship.row);
+              let best=null, bd2=curDist;
+              for(const nb of nbs){
+                const d=hexDist(nb.col,nb.row,squadTarget.col,squadTarget.row);
+                if(d<bd2&&d>=Math.max(1,range-1)){bd2=d;best=nb;}
+              }
+              if(!best){for(const nb of nbs){const d=hexDist(nb.col,nb.row,squadTarget.col,squadTarget.row);if(d<bd2){bd2=d;best=nb;}}}
+              if(!best) break;
+              ship.col=best.col;ship.row=best.row;steps--;ship.movesLeft--;
+              const hostiles=G.ships.filter(s=>s.col===ship.col&&s.row===ship.row&&isHostile(ship.owner,s.owner)&&s.hp>0);
+              for(const hx of [...hostiles]){if(ship.hp<=0)break;resolveCombat(ship,hx,0);}
+            }
+          } else if(tDist<Math.max(1,range-1)&&ship.movesLeft>0){
+            // Too close — back off
+            const nbs=hexNb(ship.col,ship.row);
+            let bestNb=null, bestD=tDist;
+            for(const nb of nbs){
+              const d=hexDist(nb.col,nb.row,squadTarget.col,squadTarget.row);
+              if(d>bestD&&d<=range){bestD=d;bestNb=nb;}
+            }
+            if(bestNb){ship.col=bestNb.col;ship.row=bestNb.row;ship.movesLeft--;}
+          }
+        } else {
+          // Melee ship — charge in
+          moveShipToward(ship,squadTarget.col,squadTarget.row);
+        }
+      }
+
+      // Attack phase — pick best target in range
+      while((ship.attacksLeft||0)>0&&ship.hp>0){
+        let attacked=false;
+        const atkRange=ship.range||1;
+        const inRange=hexesInRange(ship.col,ship.row,atkRange);
+
+        // Score targets: prefer vulnerable targets we can actually damage
+        let bestAtkScore=-Infinity, bestAtkTarget=null, bestAtkType=null;
+
+        // Enemy buildings in range
+        for(const pos of inRange){
+          const hx=G.map[pos.col][pos.row];
+          if(hx.owner==='player'&&hx.building&&hx.building!=='ruins'){
+            const bd=BLDG[hx.building]||EBLDG[hx.building]||TRADE_POSTS[hx.building];
+            if(!bd) continue;
+            const dist=hexDist(ship.col,ship.row,pos.col,pos.row);
+            const dmg=calcDmg(ship.combat,(bd.armor||0)+(hasUpgrade('ceramic_plating')?UPGRADES.ceramic_plating.bonusArmor:0));
+            const retDmg=((bd.combat||0)>0&&(bd.range||1)>=dist)?calcDmg(bd.combat+(hasUpgrade('advanced_targeting')?UPGRADES.advanced_targeting.bonus:0),ship.armor||0):0;
+            // Score: damage we deal minus risk we take. Prefer finishing off low-HP buildings.
+            const sc=dmg*2-retDmg*3+(hx.hp<=dmg?20:0);
+            if(sc>bestAtkScore){bestAtkScore=sc;bestAtkTarget=pos;bestAtkType='building';}
+          }
+        }
+
+        // Enemy ships in range
+        for(const pos of inRange){
+          const enemies=G.ships.filter(s=>s.col===pos.col&&s.row===pos.row&&s.owner==='player'&&s.hp>0);
+          for(const enemy of enemies){
+            const dist=hexDist(ship.col,ship.row,pos.col,pos.row);
+            const dmg=calcDmg(ship.combat,enemy.armor||0);
+            const retDmg=(enemy.combat>0&&(enemy.range||1)>=dist)?calcDmg(enemy.combat,ship.armor||0):0;
+            // Score: prefer killing blows, low-retaliation targets, and threats to our buildings
+            const killBonus=enemy.hp<=dmg?25:0;
+            const threatBonus=enemy.combat>=8?10:0; // high-value target
+            const sc=dmg*2-retDmg*3+killBonus+threatBonus;
+            if(sc>bestAtkScore){bestAtkScore=sc;bestAtkTarget=pos;bestAtkType='ship';bestAtkTarget._enemy=enemy;}
+          }
+        }
+
+        if(bestAtkTarget&&bestAtkType==='building'){
+          atkBldgAI(ship,bestAtkTarget.col,bestAtkTarget.row);
+          attacked=true;
+        } else if(bestAtkTarget&&bestAtkType==='ship'&&bestAtkTarget._enemy){
+          ship.attacksLeft=(ship.attacksLeft||1)-1;
+          if(ship.attacksLeft<=0) ship.hasAttacked=true;
+          resolveCombat(ship,bestAtkTarget._enemy,hexDist(ship.col,ship.row,bestAtkTarget.col,bestAtkTarget.row));
+          attacked=true;
+        }
+        if(!attacked) break;
+      }
+    }
+  }
+}
+
+function atkBldgAI(ship,tc,tr){
+  const h=G.map[tc][tr];
+  const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building]; if(!bd) return;
+  const dist=hexDist(ship.col,ship.row,tc,tr);
+  ship.attacksLeft=(ship.attacksLeft||1)-1;
+  if(ship.attacksLeft<=0) ship.hasAttacked=true;
+  let bArmor=bd.armor||0;
+  if(h.owner==='player'&&hasUpgrade('ceramic_plating')) bArmor+=UPGRADES.ceramic_plating.bonusArmor;
+  const dmg=calcDmg(ship.combat,bArmor);
+  h.hp-=dmg;
+  log(`Enemy ${SHIPS[ship.type].name} attacks your ${bd.name} for ${dmg} dmg${dist>1?' at range '+dist:''}!`,'bad');
+  const bldgRange=bd.range||1;
+  if((bd.combat||0)>0&&bldgRange>=dist){
+    let retCombat=bd.combat||0;
+    if(h.owner==='player'&&hasUpgrade('advanced_targeting')) retCombat+=UPGRADES.advanced_targeting.bonus;
+    const retDmg=calcDmg(retCombat,ship.armor||0);
+    ship.hp-=retDmg;
+    if(ship.hp<=0){log(`Enemy ${SHIPS[ship.type].name} destroyed by ${bd.name}!`,'good');removeShip(ship);}
+  }
+  if(h.hp<=0){
+    log(`Your ${bd.name} at (${tc},${tr}) was destroyed!`,'bad');
+    const was=h.building;
+    h.building=null; h.owner=null; h.hp=0; h.maxHp=0; h.stockpile=freshStock();
+    recheckEnergy();
+    if(was==='command_center') checkEnd();
+  }
+}
+
+// ============================================================
+// TURN MANAGEMENT
+// ============================================================
+function endTurn(){
+  if(G.gameOver) return;
+  G.turn++;
+  dirtyCache();
+  log(`--- Turn ${G.turn} ---`,'event');
+  resetRelays();
+  runProduction();
+  resetShips();
+  turretFire();
+  enemyPhase();
+  turretFire();
+  randomEvt();
+  checkEnd();
+  updateAll();
+}
+
+function checkEnd(){
+  if(G.gameOver) return;
+  if(!findBldg('command_center','player')){gameEnd(false,'Your Command Center was destroyed!');return;}
+  const lvl=LEVELS[G.level]||LEVELS.frontier;
+  const piratesGone=!lvl.pirates||!findBldg('pirate_base','pirate');
+  const rivalGone=!lvl.rival||!findBldg('rival_hq','rival');
+  if(piratesGone&&rivalGone)
+    gameEnd(true,'All enemies eliminated! The sector is yours.');
+}
+
+function gameEnd(win,msg){
+  G.gameOver=true;
+  document.getElementById('end-overlay').style.display='flex';
+  document.getElementById('end-title').textContent=win?'VICTORY':'DEFEAT';
+  document.getElementById('end-title').style.color=win?'#00ffcc':'#ff4444';
+  document.getElementById('end-msg').textContent=msg;
+  document.getElementById('end-stats').textContent=
+    `Turn ${G.turn} | Fleet: ${G.ships.filter(s=>s.owner==='player').length} | Combat: ${playerCombat()}`;
+}
+
+function randomEvt(){
+  if(Math.random()>0.25) return;
+  const evts=[
+    ()=>{
+      const empties=[];
+      for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
+        if(G.map[c][r].terrain===TERRAIN.SPACE&&!G.map[c][r].building) empties.push([c,r]);
+      if(empties.length>0){
+        const[c,r]=empties[Math.floor(Math.random()*empties.length)];
+        G.map[c][r].terrain=TERRAIN.ASTEROID;
+        log(`Asteroid discovered at (${c},${r})!`,'info');
+      }
+    },
+    ()=>{
+      const cc=findBldg('command_center','player');
+      if(cc){const a=3+Math.floor(Math.random()*5);G.map[cc.col][cc.row].stockpile.minerals+=a;log(`Salvage drones found ${a} minerals!`,'good');}
+    },
+    ()=>{
+      for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
+        if(G.map[c][r].owner==='player'&&G.map[c][r].building==='solar_array')
+          G.map[c][r].stockpile.energy+=3;
+      log('Solar flare! Solar Arrays got +3 bonus Energy.','good');
+    },
+  ];
+  evts[Math.floor(Math.random()*evts.length)]();
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function drawShipShape(ctx,type,x,y,col){
+  ctx.fillStyle=col;
+  const s=3; // unit size
+  if(type==='hovertranspo'){
+    // Square body + semicircle front (pointing right/up)
+    ctx.fillRect(x-s,y-s,s*2,s*2);
+    ctx.beginPath();ctx.arc(x,y-s,s,Math.PI,0);ctx.fill();
+  } else if(type==='fighter'){
+    // Triangle (pointing up)
+    ctx.beginPath();ctx.moveTo(x,y-s*2);ctx.lineTo(x-s,y+s);ctx.lineTo(x+s,y+s);ctx.closePath();ctx.fill();
+  } else if(type==='hauler'){
+    // Two squares + semicircle front
+    ctx.fillRect(x-s,y-s*0.5,s*2,s);
+    ctx.fillRect(x-s,y+s*0.5+1,s*2,s);
+    ctx.beginPath();ctx.arc(x,y-s*0.5,s,Math.PI,0);ctx.fill();
+  } else if(type==='corvette'){
+    // Square body + triangle on each end
+    ctx.fillRect(x-s,y-s,s*2,s*2);
+    ctx.beginPath();ctx.moveTo(x,y-s*2.5);ctx.lineTo(x-s,y-s);ctx.lineTo(x+s,y-s);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x,y+s*2.5);ctx.lineTo(x-s,y+s);ctx.lineTo(x+s,y+s);ctx.closePath();ctx.fill();
+  } else if(type==='stellar_clipper'){
+    // Sleek diamond + side fins
+    ctx.beginPath();ctx.moveTo(x,y-s*2.5);ctx.lineTo(x+s*1.2,y);ctx.lineTo(x,y+s*1.5);ctx.lineTo(x-s*1.2,y);ctx.closePath();ctx.fill();
+    ctx.fillRect(x-s*2,y-s*0.4,s*0.8,s*0.8);
+    ctx.fillRect(x+s*1.2,y-s*0.4,s*0.8,s*0.8);
+  } else if(type==='starship'){
+    // T-shape: 4 squares + 3 forward triangles
+    const u=s*0.8;
+    // Vertical spine (2 squares)
+    ctx.fillRect(x-u,y-u*2,u*2,u*4);
+    // Horizontal crossbar (left + right squares)
+    ctx.fillRect(x-u*3,y-u,u*2,u*2);
+    ctx.fillRect(x+u,y-u,u*2,u*2);
+    // 3 triangles pointing up (forward)
+    ctx.beginPath();ctx.moveTo(x,y-u*3.5);ctx.lineTo(x-u,y-u*2);ctx.lineTo(x+u,y-u*2);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x-u*2,y-u*2.5);ctx.lineTo(x-u*3,y-u);ctx.lineTo(x-u,y-u);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x+u*2,y-u*2.5);ctx.lineTo(x+u,y-u);ctx.lineTo(x+u*3,y-u);ctx.closePath();ctx.fill();
+  } else if(type==='battlecruiser'){
+    // Massive hull: wide rect body + 2 forward prongs + rear block
+    const u=s*1;
+    ctx.fillRect(x-u*1.5,y-u,u*3,u*2.5);
+    ctx.fillRect(x-u*2.5,y-u*2,u*1.5,u*1.5);
+    ctx.fillRect(x+u,y-u*2,u*1.5,u*1.5);
+    ctx.beginPath();ctx.moveTo(x-u*1.8,y-u*3);ctx.lineTo(x-u*2.5,y-u*2);ctx.lineTo(x-u*1,y-u*2);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x+u*1.8,y-u*3);ctx.lineTo(x+u,y-u*2);ctx.lineTo(x+u*2.5,y-u*2);ctx.closePath();ctx.fill();
+    ctx.fillRect(x-u*1,y+u*1.5,u*2,u);
+  } else {
+    // Fallback: simple triangle
+    ctx.beginPath();ctx.moveTo(x,y-s*2);ctx.lineTo(x-s,y+s);ctx.lineTo(x+s,y+s);ctx.closePath();ctx.fill();
+  }
+}
+
+function drawHexLabel(ctx,text,x,y,maxW){
+  const z=cam.zoom;
+  let sz=Math.round(9*z);
+  const minSz=Math.max(2,Math.round(6*z));
+  let lines;
+  while(sz>=minSz){
+    ctx.font=`bold ${sz}px 'Segoe UI',sans-serif`;
+    lines=[];
+    let line='';
+    for(const word of text.split(' ')){
+      const test=line?line+' '+word:word;
+      if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=word;}
+      else line=test;
+    }
+    if(line) lines.push(line);
+    if(lines.every(l=>ctx.measureText(l).width<=maxW)&&lines.length<=3) break;
+    sz--;
+  }
+  const lh=sz+Math.round(2*z);
+  const sy=y-(lines.length-1)*lh/2;
+  for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],x,sy+i*lh);
+}
+
+function render(){
+  if(!ctx) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(const s of starField){ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${s.a})`;ctx.fill();}
+
+  const selShip=selectedShipId?shipById(selectedShipId):null;
+  let reach=selShip?new Set(getReachable(selShip).map(h=>hk(h.col,h.row))):null;
+  // Fleet reachable: use minimum movesLeft of all fleet ships
+  if(!reach&&selectedFleetIds){
+    const mm=fleetMinMoves();
+    if(mm>0){
+      const fs=fleetShips();
+      if(fs.length>0){
+        const fc=fs[0].col,fr=fs[0].row;
+        reach=new Set();
+        for(let c2=0;c2<CFG.COLS;c2++) for(let r2=0;r2<CFG.ROWS;r2++){
+          const d=hexDist(fc,fr,c2,r2); if(d>0&&d<=mm) reach.add(hk(c2,r2));
+        }
+      }
+    }
+  }
+
+  // Connection lines
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    if(G.map[c][r].owner==='player'&&G.map[c][r].building){
+      const p1=h2p(c,r);
+      for(const nb of hexNb(c,r)){
+        if(G.map[nb.col][nb.row].owner==='player'&&G.map[nb.col][nb.row].building&&hk(c,r)<hk(nb.col,nb.row)){
+          const p2=h2p(nb.col,nb.row);
+          ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
+          ctx.strokeStyle='rgba(0,204,102,0.2)';ctx.lineWidth=2;ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // Hexes
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const hex=G.map[c][r], p=h2p(c,r);
+    const hov=hoveredHex&&hoveredHex.col===c&&hoveredHex.row===r;
+    const sel=selectedHex&&selectedHex.col===c&&selectedHex.row===r;
+    const inR=reach&&reach.has(hk(c,r));
+
+    let fill='#08081a', stroke='#1a1a3a', lw=0.7;
+    if(hex.terrain===TERRAIN.ASTEROID) fill='#141008';
+    if(hex.terrain===TERRAIN.NEBULA) fill='#100818';
+    if(hex.owner==='player'){fill='#0a2418';stroke='#00aa55';lw=1;}
+    if(hex.owner==='pirate'){fill='#1e0808';stroke='#aa2222';lw=1;}
+    if(hex.owner==='rival'){fill='#1e1208';stroke='#aa6622';lw=1;}
+    if(hex.owner==='neutral'){fill='#181820';stroke='#8888aa';lw=1;}
+    if(hex.building==='ruins'){fill='#0e0e0e';stroke='#333';lw=0.7;}
+    if(!hex.building&&!hex.owner&&isAdjPlayer(c,r)&&!inR){fill='#08122a';stroke='#223355';lw=0.8;}
+    if(inR){fill='#0a1a2e';stroke='#2266aa';lw=1.2;}
+    if(hov){stroke='#ffffff';lw=1.5;}
+    if(sel){stroke='#00ffcc';lw=2.2;}
+
+    // Draw hex
+    const hz=CFG.HEX*cam.zoom;
+    ctx.beginPath();
+    for(let i=0;i<6;i++){const a=Math.PI/180*60*i;const hx=p.x+hz*Math.cos(a),hy=p.y+hz*Math.sin(a);i===0?ctx.moveTo(hx,hy):ctx.lineTo(hx,hy);}
+    ctx.closePath();
+    ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();
+
+    // Tutorial hex highlight (pulsing green)
+    if(_tutHighlight.length>0&&_tutHighlight.some(th=>th.col===c&&th.row===r)){
+      const pulse=0.25+0.25*Math.sin(Date.now()*0.004);
+      ctx.beginPath();
+      for(let i=0;i<6;i++){const a=Math.PI/180*60*i;const hx=p.x+hz*Math.cos(a),hy=p.y+hz*Math.sin(a);i===0?ctx.moveTo(hx,hy):ctx.lineTo(hx,hy);}
+      ctx.closePath();
+      ctx.fillStyle=`rgba(0,255,204,${pulse})`;ctx.fill();
+      ctx.strokeStyle='#00ffcc';ctx.lineWidth=2;ctx.stroke();
+    }
+
+    // Terrain icons
+    if(hex.terrain===TERRAIN.ASTEROID&&!hex.building){ctx.fillStyle='#5a3a1a';ctx.font=`${Math.round(10*cam.zoom)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('◆◆',p.x,p.y+4*cam.zoom);}
+    if(hex.terrain===TERRAIN.NEBULA&&!hex.building){ctx.fillStyle='#5522cc';ctx.font=`${Math.round(11*cam.zoom)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('≋',p.x,p.y+4*cam.zoom);}
+
+    // Building symbol
+    if(hex.building){
+      const bd=BLDG[hex.building]||EBLDG[hex.building]||TRADE_POSTS[hex.building];
+      if(bd){
+        let col2='#888';
+        if(hex.owner==='player') col2=hex._starved?'#cccc00':'#00ee88';
+        if(hex.owner==='pirate') col2='#ff4444';
+        if(hex.owner==='rival') col2='#ff9944';
+        if(hex.owner==='neutral') col2='#aaaacc';
+        if(hex.building==='ruins') col2='#444';
+        ctx.fillStyle=col2;ctx.textAlign='center';ctx.textBaseline='middle';
+        drawHexLabel(ctx,bd.name,p.x,p.y-2*cam.zoom,CFG.HEX*1.6*cam.zoom);
+
+        // HP bar if damaged
+        if(hex.hp<hex.maxHp&&hex.maxHp>0){
+          const bw=20*cam.zoom,bh=3*cam.zoom,bx=p.x-bw/2,by=p.y+10*cam.zoom;
+          const ratio=Math.max(0,hex.hp/hex.maxHp);
+          ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,bh);
+          ctx.fillStyle=ratio>0.5?'#0a0':ratio>0.25?'#aa0':'#a00';
+          ctx.fillRect(bx,by,bw*ratio,bh);
+        }
+
+        if(hex._starved&&hex.owner==='player'){ctx.fillStyle='#ff4444';ctx.font=`${Math.round(9*cam.zoom)}px monospace`;ctx.textAlign='center';ctx.fillText('!',p.x+12*cam.zoom,p.y-10*cam.zoom);}
+      }
+    }
+
+    // Resource icons with counts
+    if(hex.owner==='player'&&hex.building&&hex.building!=='ruins'){
+      const present=TILE_RES.filter(r2=>(hex.stockpile[r2]||0)>0);
+      const isTutRes=tutCurrentStep()&&tutCurrentStep().tutResHL&&_tutHighlight.some(th=>th.col===c&&th.row===r);
+      if(present.length>0){
+        const z=cam.zoom;
+        const scale=isTutRes?1.6:1;
+        const tw=present.length*22*z*scale;
+        const sx=p.x-tw/2+11*z*scale;
+        present.forEach((r2,i)=>{
+          const rx=sx+i*22*z*scale, ry=p.y+16*z;
+          ctx.fillStyle=RCOL[r2];ctx.fillRect(rx-5*z*scale,ry-4*z*scale,10*z*scale,8*z*scale);
+          ctx.font=`bold ${Math.round(9*z*scale)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,2.5*z);ctx.lineJoin='round';
+          ctx.strokeText(hex.stockpile[r2],rx,ry);
+          ctx.fillStyle='#fff';ctx.fillText(hex.stockpile[r2],rx,ry);
+        });
+      }
+    }
+
+  }
+
+  // Ships — separate pass so they render on top of all hexes
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const shipsHere=G.ships.filter(s=>s.col===c&&s.row===r&&s.hp>0);
+    if(shipsHere.length>0){
+      const p=h2p(c,r);
+      // Group by owner+type for stacking
+      const groups={};
+      for(const s of shipsHere){
+        const k=s.owner+'|'+s.type;
+        if(!groups[k]) groups[k]={owner:s.owner,type:s.type,count:0};
+        groups[k].count++;
+      }
+      let idx=0;
+      for(const g of Object.values(groups)){
+        const z=cam.zoom;
+        const sx=p.x+10*z+idx*18*z, sy=p.y-14*z;
+        let col3='#0f0';if(g.owner==='pirate')col3='#f44';if(g.owner==='rival')col3='#f94';
+        ctx.fillStyle=col3;
+        ctx.save();ctx.translate(sx,sy);ctx.scale(z,z);
+        drawShipShape(ctx,g.type,0,0,col3);
+        ctx.restore();
+        if(g.count>1){ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(7*z)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(g.count,sx,sy+10*z);}
+        idx++;
+      }
+    }
+  }
+
+  // Selected ship ring
+  if(selShip&&selShip.hp>0){
+    const sp=h2p(selShip.col,selShip.row);
+    const z=cam.zoom;
+    ctx.strokeStyle='#00ffcc';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(sp.x+10*z,sp.y-11*z,8*z,0,Math.PI*2);ctx.stroke();
+  }
+  // Fleet selection ring
+  if(selectedFleetIds){
+    const fs=fleetShips();
+    if(fs.length>0){
+      const fp=h2p(fs[0].col,fs[0].row);
+      const z=cam.zoom;
+      ctx.strokeStyle='#00ccff';ctx.lineWidth=2;ctx.setLineDash([4*z,3*z]);
+      ctx.beginPath();ctx.arc(fp.x,fp.y,CFG.HEX*z*0.7,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateAll(){updateTopBar();updateSidebar();render();}
+
+function calcIncome(){
+  if(_incomeCache) return _incomeCache;
+  const clusters=getPlayerClusters();
+  const prod=freshStock(), cons=freshStock();
+  for(const cluster of clusters){
+    for(const key of cluster){
+      const c=Math.floor(key/100), r=key%100;
+      const h=G.map[c][r];
+      const def=BLDG[h.building]; if(!def) continue;
+      if(!h._starved){
+        for(const[res,amt] of Object.entries(def.prod||{})){
+          if(res==='energy') prod[res]+=effectiveEProd(h.building);
+          else prod[res]+=amt;
+        }
+      }
+      for(const[res,amt] of Object.entries(def.cons||{})) cons[res]+=amt;
+    }
+  }
+  const net=freshStock();
+  for(const res of RES) net[res]=prod[res]-cons[res];
+  _incomeCache=net;
+  return net;
+}
+
+function updateTopBar(){
+  const t=totalRes();
+  const inc=calcIncome();
+  document.getElementById('res-minerals').textContent=t.minerals;
+  // Energy: show net from income calc (live, not stale G.energySurplus)
+  const eNet=inc.energy;
+  const eEl=document.getElementById('res-energy');
+  eEl.textContent=eNet>=0?`+${eNet}`:`${eNet}`;
+  eEl.style.color=eNet>=0?'#4c4':'#c44';
+  document.getElementById('res-food').textContent=t.food;
+  document.getElementById('res-stardust').textContent=t.stardust;
+  document.getElementById('res-credits').textContent=G.credits;
+  for(const res of RES){
+    const el=document.getElementById(`res-${res}-d`);
+    if(!el) continue;
+    if(res==='energy'){el.textContent='';continue;} // energy shown inline
+    const n=inc[res];
+    if(n>0){el.textContent=`+${n}`;el.style.color='#4c4';}
+    else if(n<0){el.textContent=`${n}`;el.style.color='#c44';}
+    else{el.textContent='';}
+  }
+  document.getElementById('turn-info').textContent=`Turn ${G.turn}`;
+  document.getElementById('res-pop-used').textContent=popUsed();
+  document.getElementById('res-pop-cap').textContent=G.popCap;
+  document.getElementById('fleet-info').textContent=`${G.ships.filter(s=>s.owner==='player'&&s.hp>0).length} (⚔${playerCombat()})`;
+  // Tutorial top-bar highlight
+  const step=tutCurrentStep();
+  const hlRes=step&&step.tutTopHL?step.tutTopHL:[];
+  for(const res of [...RES,'pop','fleet']){
+    const ri=document.querySelector(`.res-${res}`);
+    if(ri) ri.classList.toggle('tut-bar-hl',hlRes.includes(res));
+  }
+}
+
+function updateSidebar(){
+  const sb=document.getElementById('sidebar-content');
+  if(selectedFleetIds){const fs=fleetShips();if(fs.length>1){sb.innerHTML=renderFleetPanel(fs);return;}if(fs.length===1){selectedFleetIds=null;selectedShipId=fs[0].id;}else{selectedFleetIds=null;}}
+  if(selectedShipId){const s=shipById(selectedShipId);if(s){sb.innerHTML=renderShipPanel(s);return;}selectedShipId=null;}
+  if(selectedHex) sb.innerHTML=renderHexPanel(selectedHex.col,selectedHex.row);
+  else sb.innerHTML=renderOverview();
+}
+
+function renderOverview(){
+  let h=`<div class="panel"><div class="panel-title">Colony Overview</div><div class="panel-content">`;
+  h+=`<div class="stat-row"><span class="stat-label">Turn</span><span class="stat-val">${G.turn}</span></div>`;
+  const ps=G.ships.filter(s=>s.owner==='player'&&s.hp>0);
+  h+=`<div class="stat-row"><span class="stat-label">Ships</span><span class="stat-val">${ps.length} (⚔${playerCombat()})</span></div>`;
+  let bc=0;for(let c=0;c<CFG.COLS;c++)for(let r=0;r<CFG.ROWS;r++)if(G.map[c][r].owner==='player'&&G.map[c][r].building)bc++;
+  h+=`<div class="stat-row"><span class="stat-label">Buildings</span><span class="stat-val">${bc}</span></div>`;
+  h+=`</div></div>`;
+
+  h+=`<div class="panel"><div class="panel-title">Enemies</div><div class="panel-content">`;
+  const pb=findBldg('pirate_base','pirate');
+  h+=`<div style="color:${pb?'#ff4444':'#444'}">Pirates: ${pb?'Active':'Eliminated'}</div>`;
+  if(pb){const n=G.ships.filter(s=>s.owner==='pirate'&&s.hp>0).length;h+=`<div style="color:#888;font-size:12px">Ships: ${n} | Base HP: ${G.map[pb.col][pb.row].hp}/${G.map[pb.col][pb.row].maxHp}</div>`;}
+  const rh=findBldg('rival_hq','rival');
+  h+=`<div style="color:${rh?'#ff9944':'#444'}">Rival: ${rh?'Active':'Eliminated'}</div>`;
+  if(rh){const n=G.ships.filter(s=>s.owner==='rival'&&s.hp>0).length;h+=`<div style="color:#888;font-size:12px">Ships: ${n} | HQ HP: ${G.map[rh.col][rh.row].hp}/${G.map[rh.col][rh.row].maxHp}</div>`;}
+  h+=`</div></div>`;
+
+  if(ps.length>0){
+    h+=`<div class="panel"><div class="panel-title">Your Fleet</div><div class="panel-content">`;
+    const cnt={};for(const s of ps) cnt[s.type]=(cnt[s.type]||0)+1;
+    for(const[t,n] of Object.entries(cnt)) h+=`<div>${SHIPS[t].name} x${n} (⚔${SHIPS[t].combat*n})</div>`;
+    h+=`</div></div>`;
+  }
+  h+=`<div class="panel" style="color:#555;font-size:12px;">Click hexes to inspect & build.<br>Right-drag or WASD to pan. Scroll to zoom.<br>Press E to end turn.</div>`;
+  return h;
+}
+
+function renderHexPanel(c,r){
+  const hex=G.map[c][r];
+  let h=`<div class="panel"><div class="panel-title">Hex (${c}, ${r}) — ${hex.terrain}</div><div class="panel-content">`;
+
+  if(hex.building&&hex.building!=='ruins'){
+    const bd=BLDG[hex.building]||EBLDG[hex.building]||TRADE_POSTS[hex.building];
+    const oc=hex.owner==='player'?'#00ee88':hex.owner==='pirate'?'#ff4444':hex.owner==='neutral'?'#aaaacc':'#ff9944';
+    h+=`<div><strong style="color:${oc}">${bd.name}</strong> <span style="color:#666">(${hex.owner})</span></div>`;
+    if(bd.desc) h+=`<div style="color:#888;font-size:12px;">${bd.desc}</div>`;
+    h+=`<div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${hex.maxHp>0?(hex.hp/hex.maxHp*100):0}%;background:${hex.hp/hex.maxHp>0.5?'#0a0':hex.hp/hex.maxHp>0.25?'#aa0':'#a00'}"></div></div>`;
+    h+=`<div style="font-size:12px;">HP: ${hex.hp}/${hex.maxHp}${bd.combat?' | Combat: '+bd.combat:''}</div>`;
+    if(hex._starved&&hex.owner==='player'){
+      const reason=hex._starveReason==='energy'?'insufficient energy in cluster':hex._starveReason==='overpop'?'not enough workers (pop over cap)':'not enough adjacent resources';
+      const adj=sumAdj(c,r);
+      const adjStr=TILE_RES.map(r2=>`${RICON[r2]}${adj[r2]}`).join(' ');
+      h+=`<div style="color:#ff4444;font-weight:bold;">⚠ STARVED — ${reason}</div>`;
+      h+=`<div style="color:#aa6644;font-size:11px;">Adjacent available: ${adjStr}</div>`;
+    }
+
+    if(hex.owner==='player'&&BLDG[hex.building]){
+      const d=BLDG[hex.building];
+      if(d.prod&&Object.keys(d.prod).length>0) h+=`<div style="color:#4c4;font-size:12px;">Produces: ${Object.entries(d.prod).map(([r2,a])=>`<span style="color:${RCOL[r2]}">+${a}${RICON[r2]}</span>`).join(' ')}</div>`;
+      if(d.cons&&Object.keys(d.cons).length>0) h+=`<div style="color:#c44;font-size:12px;">Consumes: ${Object.entries(d.cons).map(([r2,a])=>`<span style="color:${RCOL[r2]}">-${a}${RICON[r2]}</span>`).join(' ')}</div>`;
+    }
+
+    if(hex.owner==='player'){
+      h+=`<div style="margin-top:4px;font-size:12px;color:#aaa;">Stockpile:</div>`;
+      let any=false;
+      for(const res of TILE_RES){const a=hex.stockpile[res]||0;if(a>0){h+=`<div class="stockpile-row"><span style="color:${RCOL[res]}">${RICON[res]} ${res}: ${a}</span></div>`;any=true;}}
+      if(!any) h+=`<div style="color:#444;font-size:12px;">Empty</div>`;
+    }
+  } else if(hex.building==='ruins'){
+    h+=`<div style="color:#555;">Ruins of a destroyed structure.</div>`;
+  } else {
+    h+=`<div style="color:#666;">Empty hex.</div>`;
+  }
+
+  // Relay transfer UI
+  if(hex.building==='relay'&&hex.owner==='player'&&!hex._relayUsed){
+    h+=`<div style="margin-top:6px;"><div style="color:#88ccff;font-size:12px;margin-bottom:4px;">Transfer resources (1/turn):</div>`;
+    // Pull from adjacent
+    for(const nb of hexNb(c,r)){
+      const adj=G.map[nb.col][nb.row];
+      if(adj.owner==='player'&&adj.building){
+        const hasRes=TILE_RES.some(r2=>(adj.stockpile[r2]||0)>0);
+        if(hasRes){
+          const resStr=TILE_RES.filter(r2=>(adj.stockpile[r2]||0)>0).map(r2=>`${RICON[r2]}${adj.stockpile[r2]}`).join(' ');
+          h+=`<button class="action-btn green" onclick="relayPull(${c},${r},${nb.col},${nb.row})" style="font-size:11px;margin-bottom:2px;">← Pull from (${nb.col},${nb.row}) ${resStr}</button><br>`;
+        }
+      }
+    }
+    // Push to adjacent
+    const hasOwn=TILE_RES.some(r2=>(hex.stockpile[r2]||0)>0);
+    if(hasOwn){
+      for(const nb of hexNb(c,r)){
+        const adj=G.map[nb.col][nb.row];
+        if((adj.owner==='player'&&adj.building)||(!adj.building&&!adj.owner)){
+          h+=`<button class="action-btn" onclick="relayPush(${c},${r},${nb.col},${nb.row})" style="font-size:11px;margin-bottom:2px;">→ Push to (${nb.col},${nb.row})</button><br>`;
+        }
+      }
+    }
+    h+=`</div>`;
+  }
+  if(hex._relayUsed) h+=`<div style="color:#666;font-size:12px;margin-top:4px;">Relay already transferred this turn.</div>`;
+
+  // Research Lab upgrades panel
+  if(hex.building==='research_lab'&&hex.owner==='player'&&!hex._starved){
+    const avail=sumAdj(c,r);
+    h+=`<div class="panel"><div class="panel-title">Research Upgrades</div><div class="panel-content">`;
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits}</div>`;
+    let anyAvail=false;
+    for(const[key,u] of Object.entries(UPGRADES)){
+      if(hasUpgrade(key)){
+        h+=`<div style="color:#4c4;font-size:12px;margin:4px 0;padding:4px;border:1px solid #1a3a2a;border-radius:3px;">✓ ${u.name} — ${u.desc}</div>`;
+        continue;
+      }
+      anyAvail=true;
+      const able=canResearch(key,c,r);
+      const costStr=Object.entries(u.cost).map(([r2,a])=>`${a}${RICON[r2]||r2}`).join(' ');
+      h+=`<button class="build-btn" ${able?'':'disabled'} onclick="doResearch('${key}',${c},${r})">`;
+      h+=`<strong>${u.name}</strong><br><span class="cost">${costStr}</span> — ${u.desc}</button>`;
+    }
+    if(!anyAvail) h+=`<div style="color:#888;font-size:12px;">All upgrades researched!</div>`;
+    h+=`</div></div>`;
+  } else if(hex.building==='research_lab'&&hex.owner==='player'&&hex._starved){
+    h+=`<div class="panel"><div class="panel-title">Research Upgrades</div><div class="panel-content">`;
+    h+=`<div style="color:#ff4444;font-size:12px;">Lab is offline — requires energy to function.</div>`;
+    h+=`</div></div>`;
+  }
+
+  if(hex.owner==='player'&&hex.building&&hex.building!=='command_center'&&hex.building!=='ruins')
+    h+=`<div style="margin-top:6px;"><button class="action-btn danger" onclick="doDemolish(${c},${r})">Demolish</button></div>`;
+
+  h+=`</div></div>`;
+
+  // Ships here
+  const sh=shipsAt(c,r);
+  if(sh.length>0){
+    h+=`<div class="panel"><div class="panel-title">Ships Here</div><div class="panel-content">`;
+    for(const s of sh){
+      const sd=SHIPS[s.type];
+      const oc=s.owner==='player'?'#00ee88':s.owner==='pirate'?'#ff4444':'#ff9944';
+      h+=`<div style="margin-bottom:6px;padding:4px;border:1px solid #2a2a4a;border-radius:3px;">`;
+      h+=`<div><strong style="color:${oc}">${sd.name}</strong> <span style="color:#666">(${s.owner})</span></div>`;
+      h+=`<div style="font-size:11px;color:#888;">HP:${s.hp}/${s.maxHp} ⚔${s.combat} Rng:${s.range||1} 🛡${s.armor||0} Spd:${sd.speed} Crg:${shipTotal(s)}/${s.cargoMax}</div>`;
+      if(s.owner==='player'){
+        const selHL=(tutCurrentStep()&&tutCurrentStep().tutAction==='select_ship')?' tut-highlight':'';
+        h+=`<button class="action-btn green${selHL}" onclick="selectShip(${s.id})" style="margin-top:3px;">Select</button>`;
+      }
+      h+=`</div>`;
+    }
+    const playerShipsHere=sh.filter(s=>s.owner==='player'&&s.movesLeft>0);
+    if(playerShipsHere.length>=2) h+=`<button class="action-btn" onclick="selectFleet(${c},${r})" style="margin-top:4px;background:#1a3a5a;">⚓ Select Fleet (${playerShipsHere.length} ships)</button>`;
+    h+=`</div></div>`;
+  }
+
+  // Trade post UI — need a player ship at the hex to trade
+  const tpDef=TRADE_POSTS[hex.building];
+  if(tpDef&&hex.owner==='neutral'){
+    const pShips=shipsAt(c,r,'player').filter(s=>s.cargoMax>0);
+    if(pShips.length>0){
+      h+=`<div class="panel"><div class="panel-title">Trade Deals</div><div class="panel-content">`;
+      h+=`<div style="font-size:11px;color:#888;margin-bottom:4px;">Ship cargo required. Select a ship first to trade.</div>`;
+      for(let di=0;di<tpDef.deals.length;di++){
+        const deal=tpDef.deals[di];
+        if(deal.type==='buy'){
+          // Player sells resource for credits
+          const hasShipCargo=pShips.some(s=>(s.cargo[deal.resource]||0)>=deal.amount);
+          h+=`<button class="action-btn green" ${hasShipCargo?'':'disabled'} onclick="doTrade(${c},${r},${di})">`;
+          h+=`${deal.label}</button> `;
+        } else {
+          // Player buys resource with credits
+          const canAfford=G.credits>=deal.price;
+          const hasSpace=pShips.some(s=>shipSpace(s)>=deal.amount);
+          h+=`<button class="action-btn" ${canAfford&&hasSpace?'':'disabled'} onclick="doTrade(${c},${r},${di})">`;
+          h+=`${deal.label}</button> `;
+        }
+      }
+      h+=`</div></div>`;
+    } else {
+      h+=`<div class="panel"><div class="panel-title">Trade Deals</div><div class="panel-content">`;
+      h+=`<div style="color:#888;font-size:12px;">Send a ship with cargo space here to trade.</div>`;
+      for(const deal of tpDef.deals) h+=`<div style="color:#666;font-size:12px;margin:2px 0;">${deal.label}</div>`;
+      h+=`</div></div>`;
+    }
+  }
+
+  // Build menu
+  if(!hex.building&&(!hex.owner||hex.owner==='player')&&isAdjPlayer(c,r)){
+    const avail=sumAdj(c,r);
+    h+=`<div class="panel"><div class="panel-title">Build Here</div><div class="panel-content">`;
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits} | ☺${popFree()} free</div>`;
+    for(const[key,def] of Object.entries(BLDG)){
+      if(def.canBuild===false) continue;
+      const able=canBuildAt(key,c,r);
+      const tok=!def.needsTerrain||hex.terrain===def.needsTerrain;
+      const costStr=Object.entries(def.cost).map(([r2,a])=>`${a}${RICON[r2]}`).join(' ')||'Free';
+      const popStr=(def.pop||0)>0?` ${def.pop}☺`:'';
+      let note='';
+      if(!tok) note=` (needs ${def.needsTerrain})`;
+      else if(!able){
+        if(!canGather(c,r,tileCost(def.cost))) note=' (need more resources nearby)';
+        else if(G.credits<creditCost(def.cost)) note=` (need ${creditCost(def.cost)}${RICON.credits})`;
+        else if((def.pop||0)>popFree()) note=` (need ${def.pop}☺, ${popFree()} free)`;
+        else note=' (insufficient)';
+      }
+      const tutHL=(tutCurrentStep()&&tutCurrentStep().tutBuild===key)?' tut-highlight':'';
+      h+=`<button class="build-btn${tutHL}" ${able?'':'disabled'} onclick="doBuild('${key}',${c},${r})">`;
+      h+=`<strong>${def.name}</strong>${note}<br><span class="cost">${costStr}${popStr}</span> — ${def.desc}</button>`;
+    }
+    h+=`</div></div>`;
+  }
+
+  // Ship building at spaceport
+  if(hex.building==='spaceport'&&hex.owner==='player'){
+    const avail=sumAdj(c,r);
+    h+=`<div class="panel"><div class="panel-title">Build Ships</div><div class="panel-content">`;
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits}</div>`;
+    for(const[key,sd] of Object.entries(SHIPS)){
+      const tc=tileCost(sd.cost);
+      const able=canGather(c,r,tc)&&G.credits>=creditCost(sd.cost);
+      const costStr=Object.entries(sd.cost).map(([r2,a])=>`${a}${RICON[r2]}`).join(' ');
+      const tutHL=(tutCurrentStep()&&tutCurrentStep().tutShip===key)?' tut-highlight':'';
+      h+=`<button class="build-btn${tutHL}" ${able?'':'disabled'} onclick="buildShip('${key}')">`;
+      h+=`<strong>${sd.name}</strong> (⚔${sd.combat} Rng:${sd.range||1} 🛡${sd.armor||0} Spd:${sd.speed} Crg:${sd.cargo})<br>`;
+      h+=`<span class="cost">${costStr}</span> — ${sd.desc}</button>`;
+    }
+    h+=`</div></div>`;
+  }
+
+  h+=`<div class="panel"><button class="action-btn" onclick="deselect()">← Overview</button></div>`;
+  return h;
+}
+
+function renderShipPanel(ship){
+  const sd=SHIPS[ship.type];
+  let h=`<div class="panel"><div class="panel-title">${sd.name}</div><div class="panel-content">`;
+  h+=`<div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${ship.hp/ship.maxHp*100}%;background:${ship.hp/ship.maxHp>0.5?'#0a0':'#aa0'}"></div></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">HP</span><span class="stat-val">${ship.hp}/${ship.maxHp}</span></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">Combat</span><span class="stat-val">⚔ ${ship.combat}</span></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">Range</span><span class="stat-val">${ship.range||1}</span></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">Armor</span><span class="stat-val">🛡 ${ship.armor||0}</span></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">Speed</span><span class="stat-val">${sd.speed}</span></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">Moves Left</span><span class="stat-val">${ship.movesLeft}</span></div>`;
+  h+=`<div class="stat-row"><span class="stat-label">Location</span><span class="stat-val">(${ship.col}, ${ship.row})</span></div>`;
+  h+=`</div></div>`;
+
+  // Cargo
+  if(ship.cargoMax>0){
+    h+=`<div class="panel"><div class="panel-title">Cargo (${shipTotal(ship)}/${ship.cargoMax})</div><div class="panel-content">`;
+    for(const res of TILE_RES){
+      if(ship.cargo[res]>0){
+        const ulHL=(tutCurrentStep()&&tutCurrentStep().tutAction==='unload_minerals'&&res==='minerals')?' tut-highlight':'';
+        h+=`<div class="cargo-row"><span style="color:${RCOL[res]}">${RICON[res]} ${res}: ${ship.cargo[res]}</span>`;
+        h+=` <button class="action-btn${ulHL}" onclick="doUnload(${ship.id},'${res}')" style="padding:2px 6px;font-size:11px;">Unload</button></div>`;
+      }
+    }
+    if(shipTotal(ship)===0) h+=`<div style="color:#444;">Empty</div>`;
+
+    const hex=G.map[ship.col][ship.row];
+    if(hex.stockpile&&shipSpace(ship)>0){
+      const loadable=TILE_RES.filter(r2=>(hex.stockpile[r2]||0)>0);
+      if(loadable.length>0){
+        h+=`<div style="margin-top:6px;font-size:12px;color:#aaa;">Load from this hex:</div>`;
+        for(const res of loadable){
+          const canL=Math.min(hex.stockpile[res],shipSpace(ship));
+          const ldHL=(tutCurrentStep()&&tutCurrentStep().tutAction==='load_minerals'&&res==='minerals')?' tut-highlight':'';
+          h+=`<button class="action-btn green${ldHL}" onclick="doLoad(${ship.id},'${res}')" style="font-size:11px;">${RICON[res]} Load ${res} (${canL})</button> `;
+        }
+      }
+    }
+    h+=`</div></div>`;
+  }
+
+  // Actions
+  h+=`<div class="panel"><div class="panel-title">Actions</div><div class="panel-content">`;
+  if(ship.movesLeft>0) h+=`<div style="color:#88ccff;font-size:12px;margin-bottom:4px;">Right-click a highlighted hex to move (range: ${ship.movesLeft})</div>`;
+  else h+=`<div style="color:#666;font-size:12px;margin-bottom:4px;">No moves this turn.</div>`;
+
+  // Attack targets
+  if(!ship.hasAttacked&&ship.combat>0){
+    const atkRange=ship.range||1;
+    const around=hexesInRange(ship.col,ship.row,atkRange);
+    // Enemy buildings
+    for(const pos of around){
+      const hx=G.map[pos.col][pos.row];
+      if(hx.building&&hx.building!=='ruins'&&hx.owner&&isHostile('player',hx.owner)){
+        const bd=BLDG[hx.building]||EBLDG[hx.building]||TRADE_POSTS[hx.building];
+        const dist=hexDist(ship.col,ship.row,pos.col,pos.row);
+        const bldgRange=bd.range||1;
+        const retaliates=((bd.combat||0)>0&&bldgRange>=dist);
+        const label=dist>1?` (range ${dist}${retaliates?'':' — no retaliation'})`:(retaliates?' (melee)':' (no retaliation)');
+        h+=`<button class="action-btn danger" onclick="doAttackBldg(${ship.id},${pos.col},${pos.row})">⚔ Attack ${bd.name} (HP:${hx.hp})${label}</button> `;
+      }
+    }
+    // Enemy ships
+    for(const pos of around){
+      for(const es of G.ships.filter(s=>s.col===pos.col&&s.row===pos.row&&isHostile('player',s.owner)&&s.hp>0)){
+        const dist=hexDist(ship.col,ship.row,pos.col,pos.row);
+        const defRange=es.range||1;
+        const retaliates=(es.combat>0&&defRange>=dist);
+        const label=dist>1?` (range ${dist}${retaliates?'':' — no retaliation'})`:(retaliates?' (melee)':' (no retaliation)');
+        h+=`<button class="action-btn danger" onclick="doAttackShip(${ship.id},${es.id})">⚔ Attack ${SHIPS[es.type].name} (HP:${es.hp})${label}</button> `;
+      }
+    }
+  }
+
+  // Repair
+  if(ship.owner==='player'&&canRepairShip(ship)){
+    const rc=repairCost(ship), ra=Math.min(repairAmt(ship),ship.maxHp-ship.hp);
+    h+=`<button class="action-btn green" onclick="doRepairShip(${ship.id})">🔧 Repair +${ra} HP (${rc} minerals)</button> `;
+  }
+
+  h+=`<div style="margin-top:8px;"><button class="action-btn" onclick="deselect()">Deselect</button></div>`;
+  h+=`</div></div>`;
+  return h;
+}
+
+function renderFleetPanel(ships){
+  const mm=fleetMinMoves();
+  let h=`<div class="panel"><div class="panel-title">⚓ Fleet (${ships.length} ships)</div><div class="panel-content">`;
+  h+=`<div style="color:#88ccff;font-size:12px;margin-bottom:6px;">Location: (${ships[0].col}, ${ships[0].row})</div>`;
+  // Ship list
+  for(const s of ships){
+    const sd=SHIPS[s.type];
+    h+=`<div style="margin-bottom:4px;padding:3px;border:1px solid #1a2a4a;border-radius:3px;display:flex;justify-content:space-between;align-items:center;">`;
+    h+=`<div><strong style="color:#0e8">${sd.name}</strong> <span style="color:#666;font-size:11px;">HP:${s.hp}/${s.maxHp} ⚔${s.combat} Mv:${s.movesLeft}</span></div>`;
+    h+=`<button class="action-btn" onclick="selectShip(${s.id})" style="padding:1px 6px;font-size:10px;">Solo</button>`;
+    h+=`</div>`;
+  }
+  h+=`</div></div>`;
+  // Fleet actions
+  h+=`<div class="panel"><div class="panel-title">Fleet Actions</div><div class="panel-content">`;
+  if(mm>0) h+=`<div style="color:#88ccff;font-size:12px;margin-bottom:4px;">Right-click a highlighted hex to move fleet (range: ${mm})</div>`;
+  else h+=`<div style="color:#666;font-size:12px;margin-bottom:4px;">No fleet moves — some ships have 0 moves left.</div>`;
+  h+=`<div style="font-size:11px;color:#888;margin-bottom:6px;">Fleet moves at the speed of the slowest ship.</div>`;
+  h+=`<div style="margin-top:8px;"><button class="action-btn" onclick="deselect()">Deselect</button></div>`;
+  h+=`</div></div>`;
+  return h;
+}
+
+function selectShip(id){selectedShipId=id;selectedFleetIds=null;const s=shipById(id);if(s)selectedHex={col:s.col,row:s.row};updateAll();tutorialCheck();}
+function selectFleet(c,r){
+  const ps=shipsAt(c,r,'player').filter(s=>s.movesLeft>0);
+  if(ps.length<2){if(ps.length===1)selectShip(ps[0].id);return;}
+  selectedFleetIds=ps.map(s=>s.id);
+  selectedShipId=null;
+  selectedHex={col:c,row:r};
+  updateAll();
+}
+function fleetShips(){
+  if(!selectedFleetIds) return [];
+  return selectedFleetIds.map(id=>shipById(id)).filter(s=>s&&s.hp>0);
+}
+function fleetMinMoves(){const fs=fleetShips();if(fs.length===0)return 0;return Math.min(...fs.map(s=>s.movesLeft));}
+function deselect(){selectedHex=null;selectedShipId=null;selectedFleetIds=null;updateAll();}
+
+// ============================================================
+// LOG
+// ============================================================
+function log(msg,type='event'){
+  const p=document.getElementById('log-panel');
+  const el=document.createElement('div');
+  el.className=`log-entry log-${type}`;
+  el.textContent=`[T${G.turn}] ${msg}`;
+  p.appendChild(el); p.scrollTop=p.scrollHeight;
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+function setupInput(){
+  // Camera panning via middle-click drag or right-click drag
+  let didDrag=false;
+  canvas.addEventListener('mousedown',(e)=>{
+    if(e.button===1||e.button===2){
+      isDragging=true; didDrag=false; dragStart={x:e.clientX,y:e.clientY}; camStart={x:cam.x,y:cam.y};
+      e.preventDefault();
+    }
+  });
+  canvas.addEventListener('contextmenu',(e)=>e.preventDefault());
+
+  canvas.addEventListener('mousemove',(e)=>{
+    if(isDragging){
+      const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
+      if(Math.abs(dx)>3||Math.abs(dy)>3) didDrag=true;
+      cam.x=camStart.x+dx;
+      cam.y=camStart.y+dy;
+      clampCam();
+      render(); return;
+    }
+    const rect=canvas.getBoundingClientRect();
+    const hex=p2h(e.clientX-rect.left,e.clientY-rect.top);
+    if(hex&&(!hoveredHex||hoveredHex.col!==hex.col||hoveredHex.row!==hex.row)){hoveredHex=hex;render();}
+    else if(!hex&&hoveredHex){hoveredHex=null;render();}
+  });
+
+  window.addEventListener('mouseup',(e)=>{
+    if(isDragging&&(e.button===1||e.button===2)){
+      const wasDrag=didDrag;
+      isDragging=false;
+      // Right-click without drag = ship move command
+      if(e.button===2&&!wasDrag&&selectedShipId){
+        const rect=canvas.getBoundingClientRect();
+        const hex=p2h(e.clientX-rect.left,e.clientY-rect.top);
+        if(hex){
+          const ship=shipById(selectedShipId);
+          if(ship&&ship.movesLeft>0){
+            const d=hexDist(ship.col,ship.row,hex.col,hex.row);
+            if(d>0&&d<=ship.movesLeft){
+              moveShipTo(ship,hex.col,hex.row);
+              if(ship.hp>0) selectedHex={col:ship.col,row:ship.row};
+              else{selectedShipId=null;selectedHex=hex;}
+              updateAll(); return;
+            }
+          }
+        }
+      }
+      // Fleet move
+      if(e.button===2&&!wasDrag&&selectedFleetIds){
+        const rect=canvas.getBoundingClientRect();
+        const hex=p2h(e.clientX-rect.left,e.clientY-rect.top);
+        if(hex){
+          const fs=fleetShips();
+          const mm=fleetMinMoves();
+          if(fs.length>0&&mm>0){
+            const d=hexDist(fs[0].col,fs[0].row,hex.col,hex.row);
+            if(d>0&&d<=mm){
+              for(const s of [...fs]) moveShipTo(s,hex.col,hex.row);
+              // Update fleet — remove dead ships
+              selectedFleetIds=selectedFleetIds.filter(id=>{const s=shipById(id);return s&&s.hp>0;});
+              if(selectedFleetIds.length===0){selectedFleetIds=null;selectedHex=hex;}
+              else{selectedHex={col:hex.col,row:hex.row};}
+              updateAll(); return;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  canvas.addEventListener('click',(e)=>{
+    if(isDragging) return;
+    const rect=canvas.getBoundingClientRect();
+    const hex=p2h(e.clientX-rect.left,e.clientY-rect.top);
+    if(!hex) return;
+
+    // If clicking on a different hex than the selected ship, deselect ship
+    if(selectedShipId){
+      const ship=shipById(selectedShipId);
+      if(ship&&hex.col===ship.col&&hex.row===ship.row){updateSidebar();return;}
+      selectedShipId=null;
+    }
+    // If clicking on a different hex than the fleet, deselect fleet
+    if(selectedFleetIds){
+      const fs=fleetShips();
+      if(fs.length>0&&hex.col===fs[0].col&&hex.row===fs[0].row){updateSidebar();return;}
+      selectedFleetIds=null;
+    }
+
+    selectedHex=hex;
+    // Auto-select lone player ship on empty hex, but not if it's a buildable location
+    const ps=shipsAt(hex.col,hex.row,'player');
+    const buildable=!G.map[hex.col][hex.row].building&&isAdjPlayer(hex.col,hex.row);
+    if(ps.length===1&&!G.map[hex.col][hex.row].building&&!buildable) selectedShipId=ps[0].id;
+
+    updateSidebar(); render();
+  });
+
+  // Mouse wheel to zoom
+  canvas.addEventListener('wheel',(e)=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const oldZ=cam.zoom;
+    const delta=e.deltaY>0?-0.1:0.1;
+    cam.zoom=Math.max(0.3,Math.min(3,cam.zoom+delta));
+    // Zoom toward mouse cursor
+    cam.x=mx-(mx-cam.x)*(cam.zoom/oldZ);
+    cam.y=my-(my-cam.y)*(cam.zoom/oldZ);
+    clampCam(); render(); e.preventDefault();
+  },{passive:false});
+
+  canvas.addEventListener('mouseleave',()=>{hoveredHex=null;if(isDragging)isDragging=false;render();});
+
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='Escape') deselect();
+    if(e.key==='e'||e.key==='E') endTurn();
+    const PAN=60;
+    if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){cam.x+=PAN;clampCam();render();}
+    if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){cam.x-=PAN;clampCam();render();}
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){cam.y+=PAN;clampCam();render();}
+    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){cam.y-=PAN;clampCam();render();}
+    if(e.key==='='||e.key==='+'){const cx=canvas.width/2,cy=canvas.height/2;const oldZ=cam.zoom;cam.zoom=Math.min(3,cam.zoom+0.15);cam.x=cx-(cx-cam.x)*(cam.zoom/oldZ);cam.y=cy-(cy-cam.y)*(cam.zoom/oldZ);clampCam();render();}
+    if(e.key==='-'||e.key==='_'){const cx=canvas.width/2,cy=canvas.height/2;const oldZ=cam.zoom;cam.zoom=Math.max(0.3,cam.zoom-0.15);cam.x=cx-(cx-cam.x)*(cam.zoom/oldZ);cam.y=cy-(cy-cam.y)*(cam.zoom/oldZ);clampCam();render();}
+  });
+}
+
+function clampCam(){
+  const z=cam.zoom;
+  const mapW=(CFG.HEX*1.5*(CFG.COLS-1)+120)*z;
+  const mapH=(CFG.HEX*Math.sqrt(3)*CFG.ROWS+92)*z;
+  const minX=Math.min(0,canvas.width-mapW);
+  const minY=Math.min(0,canvas.height-mapH);
+  cam.x=Math.max(minX,Math.min(0,cam.x));
+  cam.y=Math.max(minY,Math.min(0,cam.y));
+}
+
+// ============================================================
+// CANVAS SIZING
+// ============================================================
+function resizeCanvas(){
+  const con=document.getElementById('map-container');
+  canvas.width=con.clientWidth; canvas.height=con.clientHeight;
+  genStars(); render();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init(){
+  canvas=document.getElementById('map');
+  ctx=canvas.getContext('2d');
+  G=newGame('frontier'); G.map=genMap();
+  resizeCanvas(); setupInput(); updateAll();
+  window.addEventListener('resize',resizeCanvas);
+}
+
+function startGame(levelKey){
+  G=newGame(levelKey); G.map=genMap();
+  nextShipId=1; starField=[];
+  selectedHex=null; selectedShipId=null; selectedFleetIds=null; hoveredHex=null;
+  cam={x:0,y:0,zoom:1};
+  dirtyCache();
+  document.getElementById('intro-overlay').style.display='none';
+  document.getElementById('log-panel').innerHTML='';
+  const cc=findBldg('command_center','player');
+  const starter=spawnShip('hovertranspo','player',cc.col,cc.row);
+  starter.movesLeft=SHIPS.hovertranspo.speed;
+  resetShips();
+  log('Colony established. A Hover Transpo is ready to transport resources.','good');
+  const lvl=LEVELS[levelKey];
+  if(lvl.rival&&lvl.pirates) log('Eliminate the pirate base and rival colony to claim the sector.','info');
+  else if(lvl.pirates) log('Destroy the pirate base to secure the sector.','info');
+  if(levelKey==='tutorial'){
+    showTutorial(0);
+    log('Tutorial mode — follow the popup hints to learn the game.','info');
+  } else {
+    log('Your Command Center has starting resources. Build a Solar Array first.','info');
+  }
+  resizeCanvas();
+  updateAll();
+}
+
+init();
+</script>
+</body>
+</html>
