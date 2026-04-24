@@ -89,46 +89,9 @@ const BLDG = {
   },
 };
 
-// Enemy buildings
+// Enemy-only buildings (pirate-unique structures with no player equivalent)
 const EBLDG = {
   pirate_base:   { name: 'Pirate Base',   sym: 'PB', hp: 25, combat: 5, range: 1, armor: 2 },
   pirate_turret: { name: 'Pirate Turret', sym: 'PT', hp: 15, combat: 8, range: 2, armor: 1 },
-  // Rival buildings — full economy like player
-  rival_hq: {
-    name: 'Rival HQ', sym: 'RH', hp: 30, combat: 6, range: 1, armor: 3,
-    prod: { minerals: 2, energy: 2, food: 1 }, cons: {}, pop: 0, popCap: 5,
-  },
-  rival_solar: {
-    name: 'Rival Solar', sym: 'RS', hp: 5, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 5 }, prod: { energy: 4 }, cons: {}, pop: 0,
-  },
-  rival_mine: {
-    name: 'Rival Mine', sym: 'RM', hp: 10, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 6 }, prod: { minerals: 5 }, cons: { energy: 1 }, needsTerrain: 'asteroid', pop: 2,
-  },
-  rival_hydro: {
-    name: 'Rival Farm', sym: 'RF', hp: 8, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 8 }, prod: { food: 5 }, cons: { energy: 1 }, pop: 2,
-  },
-  rival_habitat: {
-    name: 'Rival Habitat', sym: 'RB', hp: 6, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 10 }, prod: {}, cons: { food: 2 }, pop: 0, popCap: 10,
-  },
-  rival_factory: {
-    name: 'Rival Factory', sym: 'RW', hp: 8, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 12 }, prod: { credits: 5 }, cons: { minerals: 2, energy: 2 }, pop: 3,
-  },
-  rival_spaceport: {
-    name: 'Rival Spaceport', sym: 'RP', hp: 10, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 16 }, prod: {}, cons: { energy: 1 }, pop: 3,
-  },
-  rival_turret: {
-    name: 'Rival Turret', sym: 'RT', hp: 15, combat: 8, range: 2, armor: 1,
-    cost: { minerals: 10 }, prod: {}, cons: { energy: 2 }, pop: 1,
-  },
-  rival_relay: {
-    name: 'Rival Relay', sym: 'RR', hp: 3, combat: 0, range: 0, armor: 0,
-    cost: { minerals: 3 }, prod: {}, cons: {}, pop: 1,
-  },
   ruins: { name: 'Ruins', sym: '~~', hp: 0, combat: 0 },
 };
