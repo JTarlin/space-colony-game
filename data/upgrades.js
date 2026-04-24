@@ -50,4 +50,16 @@ const UPGRADES = {
     bonus: 1,
     desc: 'All combat ships gain +1 attack range.',
   },
+  ready_deployment: {
+    name: 'Ready Deployment',
+    cost: { minerals: 8, stardust: 6 },
+    effect: 'ship_ready',
+    desc: 'Newly built ships can move and act immediately.',
+  },
+  relay_amplifier: {
+    name: 'Relay Amplifier',
+    cost: { minerals: 6, stardust: 7 },
+    effect: 'relay_double',
+    desc: 'Relay Stations can transfer twice per turn.',
+  },
 };
