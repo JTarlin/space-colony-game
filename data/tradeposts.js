@@ -8,7 +8,7 @@
 
 const TRADE_POSTS = {
   smuggler_den: {
-    name: 'Smuggler Den', sym: 'SD',
+    name: 'Smuggler Den', sym: 'SD', faction: 'Smugglers Guild', portrait: 'assets/smuggler.png',
     hp: 12,
     deals: [
       { type: 'buy', resource: 'minerals', amount: 3, price: 15, label: 'Sell 3◆ → 15¤' },
@@ -17,7 +17,7 @@ const TRADE_POSTS = {
     desc: 'Shady traders. Great mineral prices and bulk food on the cheap.',
   },
   fuel_depot: {
-    name: 'Fuel Depot', sym: 'FD',
+    name: 'Fuel Depot', sym: 'FD', faction: 'Fuel Corp', portrait: 'assets/fuel_depot.png',
     hp: 10,
     deals: [
       { type: 'buy', resource: 'food',     amount: 3, price: 12, label: 'Sell 3🌿 → 12¤' },
@@ -26,7 +26,7 @@ const TRADE_POSTS = {
     desc: 'Industrial outpost. Dirt-cheap bulk minerals, pays premium for food.',
   },
   free_market: {
-    name: 'Free Market', sym: 'FM',
+    name: 'Free Market', sym: 'FM', faction: 'Free Market Consortium', portrait: null,
     hp: 15,
     deals: [
       { type: 'sell', resource: 'minerals', amount: 6, price: 2, label: 'Buy 6◆ ← 2¤' },
@@ -35,7 +35,7 @@ const TRADE_POSTS = {
     desc: 'Open bazaar. Cheap supplies of everything — a lifeline in a crisis.',
   },
   stardust_broker: {
-    name: 'Stardust Broker', sym: 'SB',
+    name: 'Stardust Broker', sym: 'SB', faction: 'Stardust Brokers', portrait: null,
     hp: 12,
     deals: [
       { type: 'buy', resource: 'stardust', amount: 2, price: 20, label: 'Sell 2✦ → 20¤' },
@@ -44,7 +44,7 @@ const TRADE_POSTS = {
     desc: 'Exotic dealer. Buys stardust at a premium and sells in bulk.',
   },
   arcane_exchange: {
-    name: 'Arcane Exchange', sym: 'AE',
+    name: 'Arcane Exchange', sym: 'AE', faction: 'Arcane Exchange', portrait: 'assets/arcane_exchange.png',
     hp: 10,
     deals: [
       { type: 'sell', resource: 'stardust', amount: 5, price: 12, label: 'Buy 5✦ ← 12¤' },
@@ -53,7 +53,7 @@ const TRADE_POSTS = {
     desc: 'Mystical traders offering bulk stardust and minerals for credits.',
   },
   void_emporium: {
-    name: 'Void Emporium', sym: 'VE',
+    name: 'Void Emporium', sym: 'VE', faction: 'Void Emporium', portrait: null,
     hp: 14,
     deals: [
       { type: 'buy', resource: 'stardust',  amount: 1, price: 12, label: 'Sell 1✦ → 12¤' },

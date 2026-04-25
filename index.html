@@ -5,11 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Colony: Sector Supremacy</title>
 <style>
+:root {
+  /* === TERMINAL GREEN PALETTE === */
+  --bg-deep: #080C08;
+  --bg-base: #0A100A;
+  --bg-raised: #0E150E;
+  --bg-surface: #121A12;
+  --bg-hover: #1A261A;
+  --bg-active: #223322;
+
+  --border-dim: #1A2A1A;
+  --border-base: #2A3E2A;
+  --border-bright: #3A5A3A;
+
+  --text-primary: #C8E6C8;
+  --text-secondary: #8AAE8A;
+  --text-dim: #5A7A5A;
+  --text-muted: #3A5A3A;
+
+  --accent: #33FF66;
+  --accent-dim: #22CC44;
+  --accent-glow: rgba(51,255,102,0.15);
+  --accent-glow-strong: rgba(51,255,102,0.3);
+
+  --warning: #FF4444;
+  --warning-dim: #CC2222;
+  --warning-bg: #1A0808;
+  --warning-glow: rgba(255,68,68,0.15);
+
+  /* Resource colors (unchanged) */
+  --res-minerals: #cc8844;
+  --res-energy: #4488ff;
+  --res-food: #44cc66;
+  --res-credits: #ffcc00;
+  --res-stardust: #cc66ff;
+  --res-pop: #dd88dd;
+  --res-fleet: #cc88ff;
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background: #0a0a1a;
-  color: #e0e0e0;
-  font-family: 'Segoe UI', 'Consolas', monospace;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Consolas', 'Courier New', monospace;
   overflow: hidden;
   height: 100vh;
   user-select: none;
@@ -18,170 +55,172 @@ body {
 #game-container { display: flex; flex-direction: column; height: 100vh; }
 #top-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: clamp(8px, 0.8vh, 18px) clamp(16px, 1.5vw, 35px); background: #111128; border-bottom: 1px solid #2a2a4a;
+  padding: clamp(8px, 0.8vh, 18px) clamp(16px, 1.5vw, 35px); background: var(--bg-base); border-bottom: 1px solid var(--border-dim);
   min-height: clamp(48px, 4vh, 80px); gap: clamp(14px, 1.2vw, 30px); flex-shrink: 0;
 }
 #top-bar .resources { display: flex; gap: clamp(14px, 1.3vw, 33px); align-items: center; }
 .resource-item { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: clamp(14px, 1vw, 23px); font-weight: bold; }
 .resource-item .res-label { font-size: clamp(9px, 0.65vw, 15px); text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; font-weight: normal; }
 .resource-item .res-value { display: flex; align-items: center; gap: 4px; }
-.res-minerals { color: #cc8844; }
-.res-energy { color: #4488ff; }
-.res-food { color: #44cc66; }
-.res-credits { color: #ffcc00; }
-.res-stardust { color: #cc66ff; }
-.res-pop { color: #dd88dd; }
-.res-fleet { color: #cc88ff; }
-#turn-info { font-size: clamp(15px, 1.1vw, 25px); color: #8888aa; }
+.res-minerals { color: var(--res-minerals); }
+.res-energy { color: var(--res-energy); }
+.res-food { color: var(--res-food); }
+.res-credits { color: var(--res-credits); }
+.res-stardust { color: var(--res-stardust); }
+.res-pop { color: var(--res-pop); }
+.res-fleet { color: var(--res-fleet); }
+#turn-info { font-size: clamp(15px, 1.1vw, 25px); color: var(--text-dim); }
 #btn-end-turn {
-  padding: clamp(8px, 0.7vh, 15px) clamp(18px, 1.5vw, 35px); background: #1a3a5a; color: #00ccff;
-  border: 1px solid #00ccff; border-radius: 4px; cursor: pointer;
+  padding: clamp(8px, 0.7vh, 15px) clamp(18px, 1.5vw, 35px); background: var(--bg-raised); color: var(--accent);
+  border: 1px solid var(--accent-dim); border-radius: 4px; cursor: pointer;
   font-family: inherit; font-size: clamp(14px, 1vw, 23px); font-weight: bold; transition: all 0.2s;
 }
-#btn-end-turn:hover { background: #00ccff; color: #0a0a1a; }
+#btn-end-turn:hover { background: var(--accent); color: var(--bg-deep); }
 #btn-next-unit {
-  padding: clamp(8px, 0.7vh, 15px) clamp(14px, 1.2vw, 28px); background: #1a3a2a; color: #44cc88;
-  border: 1px solid #44cc88; border-radius: 4px; cursor: pointer;
+  padding: clamp(8px, 0.7vh, 15px) clamp(14px, 1.2vw, 28px); background: var(--bg-raised); color: var(--accent-dim);
+  border: 1px solid var(--border-bright); border-radius: 4px; cursor: pointer;
   font-family: inherit; font-size: clamp(13px, 0.95vw, 21px); font-weight: bold; transition: all 0.2s;
   margin-right: 8px;
 }
-#btn-next-unit:hover { background: #44cc88; color: #0a0a1a; }
+#btn-next-unit:hover { background: var(--accent-dim); color: var(--bg-deep); }
 #main-area { display: flex; flex: 1; overflow: hidden; }
 #map-container { flex: 1; position: relative; overflow: hidden; }
 #map { display: block; cursor: pointer; }
 #sidebar {
-  width: clamp(340px, 22vw, 600px); background: #0d0d24; border-left: 1px solid #2a2a4a;
+  width: clamp(340px, 22vw, 600px); background: var(--bg-base); border-left: 1px solid var(--border-dim);
   display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
 }
-.panel { padding: clamp(10px, 1vh, 20px) clamp(12px, 1vw, 23px); border-bottom: 1px solid #1a1a3a; }
+.panel { padding: clamp(10px, 1vh, 20px) clamp(12px, 1vw, 23px); border-bottom: 1px solid var(--border-dim); }
 .panel-title {
   font-size: clamp(13px, 0.9vw, 20px); text-transform: uppercase; letter-spacing: 1px;
-  color: #00ccff; margin-bottom: 8px; font-weight: bold;
+  color: var(--accent); margin-bottom: 8px; font-weight: bold;
 }
 .panel-content { font-size: clamp(14px, 1vw, 23px); line-height: 1.6; }
 .build-btn {
   display: block; width: 100%; padding: clamp(8px, 0.7vh, 15px) clamp(10px, 0.8vw, 20px); margin-bottom: 5px;
-  background: #1a1a3a; color: #ccc; border: 1px solid #2a2a5a;
+  background: var(--bg-raised); color: var(--text-primary); border: 1px solid var(--border-base);
   border-radius: 3px; cursor: pointer; font-family: inherit;
   font-size: clamp(13px, 0.95vw, 21px); text-align: left; transition: all 0.15s;
 }
-.build-btn:hover:not(:disabled) { background: #2a2a5a; color: #fff; border-color: #00ccff; }
+.build-btn:hover:not(:disabled) { background: var(--bg-hover); color: #fff; border-color: var(--accent); }
 .build-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.build-btn .cost { color: #888; font-size: clamp(11px, 0.8vw, 18px); }
-@keyframes tut-pulse { 0%,100%{box-shadow:0 0 4px #00ffcc44;border-color:#00ffcc88;} 50%{box-shadow:0 0 14px #00ffccaa;border-color:#00ffcc;} }
-.tut-highlight { animation: tut-pulse 1.2s ease-in-out infinite; border-color: #00ffcc !important; }
-@keyframes tut-bar-pulse { 0%,100%{background:rgba(0,255,204,0.05);} 50%{background:rgba(0,255,204,0.25);} }
-.tut-bar-hl { animation: tut-bar-pulse 1.2s ease-in-out infinite; border-radius: 4px; padding: 2px 6px; outline: 1px solid #00ffcc88; }
+.build-btn .cost { color: var(--text-dim); font-size: clamp(11px, 0.8vw, 18px); }
+@keyframes tut-pulse { 0%,100%{box-shadow:0 0 4px rgba(51,255,102,0.25);border-color:var(--accent-dim);} 50%{box-shadow:0 0 14px rgba(51,255,102,0.6);border-color:var(--accent);} }
+.tut-highlight { animation: tut-pulse 1.2s ease-in-out infinite; border-color: var(--accent) !important; }
+@keyframes tut-bar-pulse { 0%,100%{background:rgba(51,255,102,0.05);} 50%{background:rgba(51,255,102,0.25);} }
+.tut-bar-hl { animation: tut-bar-pulse 1.2s ease-in-out infinite; border-radius: 4px; padding: 2px 6px; outline: 1px solid rgba(51,255,102,0.5); }
 .action-btn {
   display: inline-block; padding: clamp(6px, 0.5vh, 13px) clamp(11px, 0.9vw, 21px); margin: 3px 4px 3px 0;
-  background: #1a2a3a; color: #88ccff; border: 1px solid #3a4a6a;
+  background: var(--bg-raised); color: var(--accent-dim); border: 1px solid var(--border-bright);
   border-radius: 3px; cursor: pointer; font-family: inherit; font-size: clamp(13px, 0.95vw, 21px);
   transition: all 0.15s;
 }
-.action-btn:hover { background: #3a4a6a; color: #fff; }
+.action-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
 .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.action-btn.danger { background: #3a1a1a; color: #ff6666; border-color: #7a3a3a; }
-.action-btn.danger:hover { background: #7a3a3a; color: #fff; }
-.action-btn.green { background: #1a3a1a; color: #66ff66; border-color: #3a7a3a; }
-.action-btn.green:hover { background: #3a7a3a; color: #fff; }
+.action-btn.danger { background: var(--warning-bg); color: var(--warning); border-color: var(--warning-dim); }
+.action-btn.danger:hover { background: #2a0808; color: #ff6666; }
+.action-btn.green { background: var(--bg-raised); color: var(--accent); border-color: var(--accent-dim); }
+.action-btn.green:hover { background: var(--bg-hover); color: #fff; }
 .stat-row { display: flex; justify-content: space-between; padding: 2px 0; }
-.stat-label { color: #888; }
+.stat-label { color: var(--text-dim); }
 .stat-val { font-weight: bold; }
 .stockpile-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
 .cargo-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
 .hp-bar-outer {
-  width: 100%; height: 8px; background: #222; border-radius: 4px; margin: 5px 0;
+  width: 100%; height: 8px; background: var(--bg-deep); border-radius: 4px; margin: 5px 0; border: 1px solid var(--border-dim);
 }
 .hp-bar-inner { height: 100%; border-radius: 3px; transition: width 0.3s; }
 #log-panel {
-  height: clamp(110px, 10vh, 213px); background: #080818; border-top: 1px solid #2a2a4a;
+  height: clamp(110px, 10vh, 213px); background: var(--bg-deep); border-top: 1px solid var(--border-dim);
   overflow-y: auto; padding: 6px clamp(12px, 1vw, 23px); font-size: clamp(13px, 0.9vw, 20px); line-height: 1.5; flex-shrink: 0;
 }
 .log-entry { padding: 1px 0; }
-.log-event { color: #aaa; } .log-good { color: #44cc66; }
-.log-bad { color: #ff4444; } .log-combat { color: #ff8844; }
-.log-info { color: #4488ff; }
-.highlight { color: #00ffcc; }
+.log-event { color: var(--text-secondary); } .log-good { color: var(--accent); }
+.log-bad { color: var(--warning); } .log-combat { color: #ff8844; }
+.log-info { color: var(--accent-dim); }
+.highlight { color: var(--accent); }
 #intro-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.88); display: flex; align-items: center;
+  background: rgba(0,0,0,0.92); display: flex; align-items: center;
   justify-content: center; z-index: 100;
 }
 #intro-box {
-  background: #111130; border: 1px solid #00ccff; border-radius: 8px;
+  background: var(--bg-base); border: 1px solid var(--accent-dim); border-radius: 8px;
   padding: clamp(28px, 3vw, 60px); max-width: clamp(560px, 55vw, 1125px); text-align: center; width: 90vw;
+  box-shadow: 0 0 40px var(--accent-glow);
 }
-#intro-box h1 { color: #00ffcc; font-size: clamp(36px, 3.5vw, 70px); margin-bottom: 4px; letter-spacing: 4px; text-transform: uppercase; }
-#intro-box .subtitle { color: #00ccff; font-size: clamp(18px, 1.8vw, 35px); letter-spacing: 6px; margin-bottom: 18px; font-weight: bold; }
-#intro-box p { color: #aab; margin-bottom: 12px; font-size: clamp(15px, 1.1vw, 24px); line-height: 1.6; }
-#intro-box ul { text-align: left; color: #8899aa; font-size: 15px; margin: 12px 30px; line-height: 1.8; }
+#intro-box h1 { color: var(--accent); font-size: clamp(36px, 3.5vw, 70px); margin-bottom: 4px; letter-spacing: 4px; text-transform: uppercase; }
+#intro-box .subtitle { color: var(--accent-dim); font-size: clamp(18px, 1.8vw, 35px); letter-spacing: 6px; margin-bottom: 18px; font-weight: bold; }
+#intro-box p { color: var(--text-secondary); margin-bottom: 12px; font-size: clamp(15px, 1.1vw, 24px); line-height: 1.6; }
+#intro-box ul { text-align: left; color: var(--text-dim); font-size: 15px; margin: 12px 30px; line-height: 1.8; }
 #intro-box button {
-  margin-top: 16px; padding: 13px 34px; background: #00ccff; color: #0a0a1a;
+  margin-top: 16px; padding: 13px 34px; background: var(--accent); color: var(--bg-deep);
   border: none; border-radius: 4px; font-size: 17px; font-weight: bold;
   cursor: pointer; font-family: inherit;
 }
-#intro-box button:hover { background: #00ffcc; }
+#intro-box button:hover { background: #55ff88; }
 .level-grid { display: flex; flex-direction: column; gap: clamp(6px, 0.6vh, 13px); margin-top: 14px; max-height: 50vh; overflow-y: auto; }
 .level-card {
-  background: #0a0a22; border: 1px solid #223; border-radius: 6px; padding: clamp(10px, 0.8vh, 20px) clamp(12px, 1vw, 25px);
+  background: var(--bg-deep); border: 1px solid var(--border-dim); border-radius: 6px; padding: clamp(10px, 0.8vh, 20px) clamp(12px, 1vw, 25px);
   text-align: left; cursor: pointer; transition: border-color 0.15s;
   display: flex; align-items: center; gap: clamp(10px, 1vw, 23px);
 }
-.level-card:hover { border-color: #00ccff; background: #12122e; }
-.level-card h3 { color: #00ccff; font-size: clamp(14px, 1vw, 23px); margin: 0; white-space: nowrap; min-width: clamp(140px, 12vw, 250px); }
+.level-card:hover { border-color: var(--accent); background: var(--bg-raised); }
+.level-card h3 { color: var(--accent-dim); font-size: clamp(14px, 1vw, 23px); margin: 0; white-space: nowrap; min-width: clamp(140px, 12vw, 250px); }
 .level-card .level-diff { font-size: clamp(11px, 0.8vw, 18px); min-width: clamp(40px, 4vw, 75px); text-align: center; }
-.level-card p { color: #778; font-size: clamp(12px, 0.85vw, 20px); margin: 0; line-height: 1.4; flex: 1; }
-.level-card.tutorial { border-color: #00ffcc44; }
-.level-card.tutorial:hover { border-color: #00ffcc; }
-.level-card.tutorial h3 { color: #00ffcc; }
+.level-card p { color: var(--text-dim); font-size: clamp(12px, 0.85vw, 20px); margin: 0; line-height: 1.4; flex: 1; }
+.level-card.tutorial { border-color: rgba(51,255,102,0.25); }
+.level-card.tutorial:hover { border-color: var(--accent); }
+.level-card.tutorial h3 { color: var(--accent); }
 #tutorial-popup {
   position: fixed; bottom: 150px; left: 50%; transform: translateX(-50%);
-  background: #111130; border: 2px solid #00ffcc; border-radius: 8px;
-  padding: 20px 26px; max-width: 480px; z-index: 90; display: none;
-  box-shadow: 0 0 30px rgba(0,255,204,0.15);
+  background: var(--bg-base); border: 2px solid var(--accent-dim); border-radius: 8px;
+  padding: 20px 26px; max-width: 620px; z-index: 90; display: none;
+  box-shadow: 0 0 30px var(--accent-glow);
 }
-#tutorial-popup h3 { color: #00ffcc; font-size: 16px; margin: 0 0 8px 0; }
-#tutorial-popup p { color: #aab; font-size: 15px; margin: 0 0 12px 0; line-height: 1.5; }
+#tutorial-popup h3 { color: var(--accent); font-size: 16px; margin: 0 0 8px 0; }
+#tutorial-popup p { color: var(--text-secondary); font-size: 15px; margin: 0 0 12px 0; line-height: 1.5; }
 #tutorial-popup button {
-  padding: 8px 22px; background: #00ccff; color: #0a0a1a;
+  padding: 8px 22px; background: var(--accent); color: var(--bg-deep);
   border: none; border-radius: 4px; font-size: 15px; font-weight: bold;
   cursor: pointer; font-family: inherit;
 }
 #event-popup {
   position: fixed; bottom: 150px; left: 50%; transform: translateX(-50%);
-  background: #111130; border: 2px solid #ff4444; border-radius: 8px;
-  padding: 20px 26px; max-width: 520px; min-width: 340px; z-index: 91; display: none;
-  box-shadow: 0 0 30px rgba(255,68,68,0.2);
+  background: var(--bg-base); border: 2px solid #ff4444; border-radius: 8px;
+  padding: 20px 26px; max-width: 620px; min-width: 400px; z-index: 91; display: none;
+  box-shadow: 0 0 30px var(--warning-glow);
 }
 #event-popup h3 { color: #ff6644; font-size: 16px; margin: 0 0 8px 0; }
-#event-popup p { color: #bbc; font-size: 14px; margin: 0 0 14px 0; line-height: 1.55; }
+#event-popup p { color: var(--text-primary); font-size: 14px; margin: 0 0 14px 0; line-height: 1.55; }
 #evt-portrait {
-  float: left; width: 48px; height: 48px; margin: 0 14px 8px 0;
+  float: left; width: 192px; height: 192px; margin: 0 18px 12px 0;
   border-radius: 50%; border: 2px solid #ff4444;
   display: flex; align-items: center; justify-content: center;
-  font-size: 28px; background: #1a0a0a;
+  font-size: 80px; background: var(--warning-bg);
 }
 #evt-buttons { display: flex; gap: 8px; flex-wrap: wrap; clear: both; }
 #evt-buttons button {
-  padding: 7px 18px; background: #2a1a1a; color: #ff8866;
+  padding: 7px 18px; background: var(--warning-bg); color: #ff8866;
   border: 1px solid #ff444488; border-radius: 4px; font-size: 13px;
   cursor: pointer; font-family: inherit; flex: 1; min-width: 120px;
 }
-#evt-buttons button:hover { background: #3a2020; border-color: #ff6644; }
+#evt-buttons button:hover { background: #2a0808; border-color: #ff6644; }
 #evt-buttons button.evt-primary { background: #441a1a; color: #ffaa88; border-color: #ff6644; font-weight: bold; }
 #end-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.88); display: none; align-items: center;
+  background: rgba(0,0,0,0.92); display: none; align-items: center;
   justify-content: center; z-index: 100;
 }
 #end-box {
-  background: #111130; border: 2px solid #00ffcc; border-radius: 8px;
+  background: var(--bg-base); border: 2px solid var(--accent); border-radius: 8px;
   padding: 36px; max-width: 460px; text-align: center;
+  box-shadow: 0 0 40px var(--accent-glow);
 }
 #end-box h1 { font-size: 34px; margin-bottom: 16px; }
-#end-box p { color: #aab; margin-bottom: 10px; font-size: 16px; }
+#end-box p { color: var(--text-secondary); margin-bottom: 10px; font-size: 16px; }
 #end-box button {
-  margin-top: 20px; padding: 13px 34px; background: #00ccff; color: #0a0a1a;
+  margin-top: 20px; padding: 13px 34px; background: var(--accent); color: var(--bg-deep);
   border: none; border-radius: 4px; font-size: 17px; font-weight: bold;
   cursor: pointer; font-family: inherit;
 }
@@ -197,7 +236,7 @@ body {
     <div class="level-grid">
       <div class="level-card tutorial" onclick="startGame('tutorial')">
         <h3>📘 Tutorial</h3>
-        <div class="level-diff" style="color:#00ffcc;">Guided</div>
+        <div class="level-diff" style="color:#33ff66;">Guided</div>
         <p>Learn the ropes step by step. Build your colony, use transports, construct ships, and defeat a Rogue Drone outpost.</p>
       </div>
       <div class="level-card" onclick="startGame('skirmish')">
@@ -230,6 +269,7 @@ body {
 </div>
 
 <div id="tutorial-popup">
+  <img id="tut-portrait" src="" alt="" style="float:left;width:192px;height:192px;margin:0 18px 12px 0;border-radius:50%;border:2px solid #33ff66;object-fit:cover;display:none;">
   <h3 id="tut-title"></h3>
   <p id="tut-text"></p>
   <button onclick="tutorialNext()">Got it</button>
@@ -261,7 +301,7 @@ body {
       <div class="resource-item res-credits"><span class="res-label">Credits</span><span class="res-value"><span>¤</span> <span id="res-credits">0</span><span id="res-credits-d" style="font-size:12px;margin-left:3px;"></span></span></div>
       <div class="resource-item res-stardust"><span class="res-label">Stardust</span><span class="res-value"><span>✦</span> <span id="res-stardust">0</span><span id="res-stardust-d" style="font-size:12px;margin-left:3px;"></span></span></div>
     </div>
-    <div class="resource-item res-pop"><span class="res-label">Population</span><span class="res-value"><span>☺</span> <span id="res-pop-used">0</span>/<span id="res-pop-cap">5</span></span></div>
+    <div class="resource-item res-pop"><span class="res-label">Population</span><span class="res-value"><span>👤</span> <span id="res-pop-used">0</span>/<span id="res-pop-cap">5</span></span></div>
     <div class="resource-item res-fleet"><span class="res-label">Fleet</span><span class="res-value"><span>⚔</span> <span id="fleet-info">0</span></span></div>
     <button id="btn-next-unit" onclick="cycleNextReady()" title="Cycle to next ready unit (Tab)">NEXT ⏭</button><button id="btn-end-turn" onclick="endTurn()">END TURN ▶</button>
   </div>
@@ -352,6 +392,9 @@ function getRivals(){ const lvl=LEVELS[G.level]||LEVELS.frontier; const r=[]; if
 function ownerColor(o){ return o==='player'?'#44ff88':o==='pirate'?'#ff4444':RIVAL_COLORS[o]||'#ff9944'; }
 function ownerColorShort(o){ return o==='player'?'#0f0':o==='pirate'?'#f44':o==='rival'?'#f94':o==='rival2'?'#c4f':o==='rival3'?'#4cf':'#f94'; }
 function ownerHexColor(o){ return o==='player'?'#00ee88':o==='pirate'?'#ff4444':o==='neutral'?'#aaaacc':RIVAL_COLORS[o]||'#ff9944'; }
+function hexFaction(c,r){ const h=G.map[c][r]; const tp=TRADE_POSTS[h.building]; if(tp&&tp.faction) return tp.faction; return G.factions[h.owner]||h.owner; }
+function getPortrait(owner,building){ const tp=TRADE_POSTS[building]; if(tp&&tp.portrait) return tp.portrait; const lvl=LEVELS[G.level]; if(lvl&&lvl.portraits&&lvl.portraits[owner]) return lvl.portraits[owner]; return null; }
+function hexPortrait(c,r){ const h=G.map[c][r]; return getPortrait(h.owner,h.building); }
 const LEVELS = {
   tutorial: {
     name: 'Tutorial', pirates: true, rival: false,
@@ -359,6 +402,7 @@ const LEVELS = {
     startMinerals: 30, startFood: 12, startCredits: 10,
     pirateStrength: 0.5,
     factions: { player: 'Colonists', pirate: 'Rogue Drones', neutral: 'Independent' },
+    portraits: { pirate: null, neutral: null },
   },
   skirmish: {
     name: 'Pirate Skirmish', pirates: true, rival: false,
@@ -366,6 +410,7 @@ const LEVELS = {
     startMinerals: 20, startFood: 8, startCredits: 5,
     pirateStrength: 1,
     factions: { player: 'Colonists', pirate: "Rognar's Pirates", neutral: 'Free Traders' },
+    portraits: { pirate: 'assets/rognar.png', neutral: null },
   },
   frontier: {
     name: 'Frontier', pirates: true, rival: true,
@@ -373,6 +418,7 @@ const LEVELS = {
     startMinerals: 20, startFood: 8, startCredits: 5,
     pirateStrength: 1, rivalStartMinerals: 20, rivalStartFood: 8,
     factions: { player: 'Colonists', pirate: 'Void Reavers', rival: 'Descendants of Cham', neutral: 'Free Traders' },
+    portraits: { pirate: 'assets/void_reaver.png', rival: 'assets/cham.png', neutral: null },
   },
   hostile: {
     name: 'Hostile Sector', pirates: true, rival: true,
@@ -381,6 +427,7 @@ const LEVELS = {
     pirateStrength: 1.5, rivalStartMinerals: 30, rivalStartFood: 12,
     rivalExtraBuildings: true,
     factions: { player: 'Colonists', pirate: 'Iron Fangs', rival: 'Hegemony', neutral: 'Smugglers' },
+    portraits: { pirate: 'assets/iron_fangs.png', rival: 'assets/hegemony.png', neutral: null },
   },
   gauntlet: {
     name: 'Gauntlet', pirates: true, pirates2: true, rival: true,
@@ -389,7 +436,8 @@ const LEVELS = {
     pirateStrength: 1.5, rivalStartMinerals: 35, rivalStartFood: 15,
     rivalExtraBuildings: true,
     teams: { player: 0, pirate: 1, rival: 1, neutral: -1 },
-    factions: { player: 'Colonists', pirate: 'Dreadlord', rival: 'Dreadlord', neutral: 'Black Market' },
+    factions: { player: 'Colonists', pirate: 'Stellar Cult', rival: 'Stellar Cult', neutral: 'Black Market' },
+    portraits: { pirate: 'assets/stellar_cult.png', rival: 'assets/stellar_cult.png', neutral: null },
   },
   dreadlord: {
     name: 'Dreadlord', pirates: true, pirates2: true, rival: true, rival2: true, rival3: true,
@@ -402,6 +450,7 @@ const LEVELS = {
     rivalExtraBuildings: true,
     teams: { player: 0, pirate: 1, rival: 1, rival2: 1, rival3: 1, neutral: -1 },
     factions: { player: 'Colonists', pirate: 'Dreadlord', rival: 'Dreadlord', rival2: 'Dreadlord', rival3: 'Dreadlord', neutral: 'Black Market' },
+    portraits: { pirate: 'assets/dreadlord.png', rival: 'assets/dreadlord.png', rival2: 'assets/dreadlord.png', rival3: 'assets/dreadlord.png', neutral: null },
   },
 };
 
@@ -419,9 +468,9 @@ const LEVELS = {
 //   Relay=(4,4)  Habitat=(1,4)  Spaceport=(2,3)
 //   Pirate base=(22,4)
 const TUTORIAL_STEPS = [
-  { title: 'Welcome, Commander!',
+  { title: 'Welcome, Commander!', portrait: 'assets/tutorial.png',
     text: 'This tutorial will teach you how to build a thriving colony. Your Command Center (CC) at the center of your screen is the heart of your base — it produces a small amount of minerals, energy, and food each turn.' },
-  { title: 'Your Objective',
+  { title: 'Your Objective', portrait: 'assets/tutorial.png',
     text: 'Far to the east, a Pirate Base threatens the sector. You can see it marked in red. Your mission: build up your colony, raise a fleet, and destroy the pirate base to win! Let\'s start by building your economy.',
     highlight(){ return [{col:22,row:4}]; }
   },
@@ -443,16 +492,16 @@ const TUTORIAL_STEPS = [
     highlight(){ return [{col:2,row:5}]; },
     require(G){ return !!findPlayerBldg('hydroponics'); }
   },
-  { title: 'How Resources Work',
+  { title: 'How Resources Work', portrait: 'assets/tutorial.png',
     text: 'Important! Resources like minerals, food, and stardust are physically stored on each tile. See the coloured numbers on your Command Center? Those are real stockpiles. Buildings can only use resources from their own tile or immediate neighbors. To move resources further, you need transport ships or relays.',
     tutResHL: true,
     highlight(){ return [{col:2,row:4}]; }
   },
-  { title: 'Physical Resources',
+  { title: 'Physical Resources', portrait: 'assets/tutorial.png',
     text: 'The minerals, food, and stardust totals shown here in the top bar are the sum of all your stockpiles across the map. But remember — each unit is physically on a specific tile. A mine far from your CC stores its minerals locally. To use them elsewhere, you must transport or relay them.',
     tutTopHL: ['minerals','food','stardust']
   },
-  { title: 'Energy & Credits',
+  { title: 'Energy & Credits', portrait: 'assets/tutorial.png',
     text: 'Energy and credits work differently — they are colony-wide. Energy is a net balance: solar arrays and your CC produce it, while most buildings consume it. If the total goes negative, buildings shut down! Credits are a single shared pool earned from your CC and trade posts. Neither needs to be transported.',
     tutTopHL: ['energy','credits']
   },
@@ -484,12 +533,12 @@ const TUTORIAL_STEPS = [
     highlight(){ return [{col:4,row:4}]; },
     require(G){ return !!findPlayerBldg('relay'); }
   },
-  { title: 'Using Relays',
+  { title: 'Using Relays', portrait: 'assets/tutorial.png',
     text: 'Relays can also actively transfer resources! Click-and-drag from a building onto an adjacent relay to pull resources into it. Or drag from the relay onto an adjacent building to push resources out. Each relay gets 1 transfer per turn (2 with the Relay Amplifier upgrade). This is faster than using transports for short distances!',
     highlight(){ return [{col:4,row:4}]; }
   },
-  { title: 'Population & Housing',
-    text: 'See the population counter (☺) in the top bar? Every ship and some buildings require population to operate. Your CC provides 5 pop capacity, but you\'ll quickly need more. Habitats add +10 capacity each — without enough housing, you can\'t build new ships or crew larger buildings.',
+  { title: 'Population & Housing', portrait: 'assets/tutorial.png',
+    text: 'See the population counter (👤) in the top bar? Every ship and some buildings require population to operate. Your CC provides 5 pop capacity, but you\'ll quickly need more. Habitats add +10 capacity each — without enough housing, you can\'t build new ships or crew larger buildings.',
     tutTopHL: ['pop']
   },
   { title: 'Step 6: Build a Habitat',
@@ -567,6 +616,9 @@ function showTutorial(step){
   const s=TUTORIAL_STEPS[step];
   document.getElementById('tut-title').textContent=s.title;
   document.getElementById('tut-text').textContent=s.text;
+  const tutPort=document.getElementById('tut-portrait');
+  if(s.portrait){tutPort.src=s.portrait;tutPort.style.display='';}
+  else{tutPort.style.display='none';}
   const btn=document.querySelector('#tutorial-popup button');
   btn.style.display=s.noBtn?'none':'';
   document.getElementById('tutorial-popup').style.display='block';
@@ -603,7 +655,7 @@ const EVT_THEME = {
   rival:   { border:'#ff9944', title:'#ffaa44', portrait:'#1a1208', portBorder:'#ff9944', btnBg:'#1e1a0e', btnColor:'#ffbb66', btnBorder:'#ff994488', btnHover:'#2e2a1a', icon:'⚔️', shadow:'rgba(255,153,68,0.2)' },
   rival2:  { border:'#cc44ff', title:'#cc66ff', portrait:'#140a1e', portBorder:'#cc44ff', btnBg:'#1a0e1e', btnColor:'#dd88ff', btnBorder:'#cc44ff88', btnHover:'#2a1a2e', icon:'⚔️', shadow:'rgba(204,68,255,0.2)' },
   rival3:  { border:'#44ccff', title:'#44ddff', portrait:'#081a1e', portBorder:'#44ccff', btnBg:'#0e1a1e', btnColor:'#66ddff', btnBorder:'#44ccff88', btnHover:'#1a2a2e', icon:'⚔️', shadow:'rgba(68,204,255,0.2)' },
-  neutral: { border:'#aaaacc', title:'#bbbbdd', portrait:'#151520', portBorder:'#aaaacc', btnBg:'#1a1a2a', btnColor:'#aabbcc', btnBorder:'#aaaacc88', btnHover:'#2a2a3a', icon:'💬', shadow:'rgba(170,170,204,0.2)' },
+  neutral: { border:'#8AAE8A', title:'#C8E6C8', portrait:'#0E150E', portBorder:'#8AAE8A', btnBg:'#0E150E', btnColor:'#8AAE8A', btnBorder:'#2A3E2A88', btnHover:'#1A261A', icon:'💬', shadow:'rgba(138,174,138,0.15)' },
   dreadlord:{ border:'#ff2222', title:'#ff4422', portrait:'#1e0505', portBorder:'#ff2222', btnBg:'#2a0e0e', btnColor:'#ff6644', btnBorder:'#ff222288', btnHover:'#3a1414', icon:'💀', shadow:'rgba(255,34,34,0.3)' },
 };
 
@@ -618,7 +670,13 @@ function showEvent(evt){
   const port=document.getElementById('evt-portrait');
   port.style.borderColor=theme.portBorder;
   port.style.background=theme.portrait;
-  port.textContent=evt.icon||theme.icon;
+  // Use image portrait if available, otherwise emoji
+  if(evt.portrait){
+    port.innerHTML=`<img src="${evt.portrait}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  } else {
+    port.innerHTML='';
+    port.textContent=evt.icon||theme.icon;
+  }
   const btnDiv=document.getElementById('evt-buttons');
   btnDiv.innerHTML='';
   const choices=evt.choices||[{label:'Dismiss'}];
@@ -666,7 +724,7 @@ const EVENT_SCRIPTS = [
     build(G){
       const cost=20+G.turn*3;
       return {
-        faction:'pirate', title:`${G.factions.pirate} — Demand`,
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Demand`,
         text:`"We see your pathetic colony growing out there. You have two options: pay us ${cost} credits for safe passage through this sector, or watch your mining outposts burn. Choose wisely."`,
         icon:'☠️',
         choices:[
@@ -690,7 +748,7 @@ const EVENT_SCRIPTS = [
     build(G){
       const count=G.ships.filter(s=>s.owner==='pirate'&&s.hp>0&&s.combat>0).length;
       return {
-        faction:'pirate', title:`${G.factions.pirate} — Transmission`,
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Transmission`,
         text:`"${count} ships and counting, Commander. Our fleet grows while you waste time building farms. Every turn you delay is another fighter rolling off our production line. Tick tock."`,
         icon:'☠️',
         choices:[{ label:'Noted' }]
@@ -709,7 +767,7 @@ const EVENT_SCRIPTS = [
     },
     build(G){
       return {
-        faction:'pirate', title:`${G.factions.pirate} — Open Channel`,
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Open Channel`,
         text:`"...Alright, we'll admit it. That fleet of yours is looking pretty serious. Maybe we picked the wrong sector this time. Don't get cocky though — we've still got tricks up our sleeve."`,
         icon:'☠️',
         choices:[{ label:'Press the advantage' }]
@@ -732,7 +790,7 @@ const EVENT_SCRIPTS = [
     },
     build(G){
       return {
-        faction:'rival', title:`${G.factions.rival} — Warning`,
+        faction:'rival', portrait:getPortrait('rival'), title:`${G.factions.rival} — Warning`,
         text:`"Commander, you're expanding awfully close to our territory. We've been patient, but our borders are not negotiable. Pull back your operations or we will be forced to respond with military assets."`,
         icon:'⚔️',
         choices:[
@@ -752,7 +810,7 @@ const EVENT_SCRIPTS = [
     },
     build(G){
       return {
-        faction:'rival', title:`${G.factions.rival} — Trade Proposal`,
+        faction:'rival', portrait:getPortrait('rival'), title:`${G.factions.rival} — Trade Proposal`,
         text:`"Despite our differences, we see the value in commerce. We'll trade you 30 minerals for 15 credits. A fair deal in these parts. What do you say?"`,
         icon:'📦',
         choices:[
@@ -776,7 +834,7 @@ const EVENT_SCRIPTS = [
     check(G){ return G.turn===2; },
     build(G){
       return {
-        faction:'dreadlord', title:'Dreadlord — Hail',
+        faction:'dreadlord', portrait:getPortrait('pirate'), title:'Dreadlord — Hail',
         text:`"So... another colony dares to plant its flag in MY sector. How delightful. I command every faction in this system, Commander. Every ship, every station, every gun. You are alone here. Enjoy it while it lasts."`,
         icon:'💀',
         choices:[{ label:'...' }]
@@ -794,7 +852,7 @@ const EVENT_SCRIPTS = [
     },
     build(G){
       return {
-        faction:'dreadlord', title:'Dreadlord — Taunt',
+        faction:'dreadlord', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Taunt`,
         text:`"Your fleet... where did it go? Oh, right. My forces took care of that. Tell me, Commander — do you even have a plan? Or are you just throwing ships at me and hoping for the best? Pathetic."`,
         icon:'💀',
         choices:[{ label:'You\'ll pay for this' }]
@@ -812,7 +870,7 @@ const EVENT_SCRIPTS = [
     build(G){
       const count=G.ships.filter(s=>s.owner==='player'&&s.hp>0&&s.combat>0).length;
       return {
-        faction:'dreadlord', title:'Dreadlord — Concern',
+        faction:'dreadlord', portrait:getPortrait('pirate'), title:'Dreadlord — Concern',
         text:`"${count} combat ships? ...Interesting. Perhaps I underestimated you, Commander. No matter. I have resources across the entire sector. You have one small corner. The math is not in your favor."`,
         icon:'💀',
         choices:[{ label:'We\'ll see about that' }]
@@ -830,7 +888,7 @@ const EVENT_SCRIPTS = [
     },
     build(G){
       return {
-        faction:'dreadlord', title:'Dreadlord — Rage',
+        faction:'dreadlord', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Rage`,
         text:`"You destroyed one of my outposts?! INSOLENT! You think this changes anything? I will rally every remaining ship in this sector against you. You have made a very powerful enemy today, Commander."`,
         icon:'💀',
         choices:[{ label:'Good' }]
@@ -852,8 +910,10 @@ const EVENT_SCRIPTS = [
       return false;
     },
     build(G){
+      let fname=G.factions.neutral, fport=null;
+      for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){ const h=G.map[c][r]; if(h.owner==='neutral'&&TRADE_POSTS[h.building]){const tp=TRADE_POSTS[h.building];if(tp.faction){fname=tp.faction;fport=tp.portrait||null;break;}} }
       return {
-        faction:'neutral', title:`${G.factions.neutral} — Tip`,
+        faction:'neutral', portrait:fport, title:`${fname} — Tip`,
         text:`"Psst, Commander. Friendly advice from someone who's been around this sector a while: the pirates are stockpiling ships near their base. If you've got transports running near there, you might want to reroute. Just looking out for a good customer."`,
         icon:'💬',
         choices:[{ label:'Thanks for the heads-up' }]
@@ -868,8 +928,10 @@ const EVENT_SCRIPTS = [
       return !G.upgrades||Object.keys(G.upgrades).length===0;
     },
     build(G){
+      let fname=G.factions.neutral, fport=null;
+      for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){ const h=G.map[c][r]; if(h.owner==='neutral'&&TRADE_POSTS[h.building]){const tp=TRADE_POSTS[h.building];if(tp.faction){fname=tp.faction;fport=tp.portrait||null;break;}} }
       return {
-        faction:'neutral', title:`${G.factions.neutral} — Gossip`,
+        faction:'neutral', portrait:fport, title:`${fname} — Gossip`,
         text:`"You know about stardust, right? Those shimmering purple deposits? Build a Stardust Refinery on one and you can research powerful upgrades. Most commanders overlook it early on — don't make that mistake."`,
         icon:'💎',
         choices:[{ label:'Good to know' }]
@@ -3193,7 +3255,7 @@ function gameEnd(win,msg){
   G.gameOver=true;
   document.getElementById('end-overlay').style.display='flex';
   document.getElementById('end-title').textContent=win?'VICTORY':'DEFEAT';
-  document.getElementById('end-title').style.color=win?'#00ffcc':'#ff4444';
+  document.getElementById('end-title').style.color=win?'#33ff66':'#ff4444';
   document.getElementById('end-msg').textContent=msg;
   document.getElementById('end-stats').textContent=
     `Turn ${G.turn} | Fleet: ${G.ships.filter(s=>s.owner==='player').length} | Combat: ${playerCombat()}`;
@@ -3351,18 +3413,18 @@ function render(){
     const sel=selectedHex&&selectedHex.col===c&&selectedHex.row===r;
     const inR=reach&&reach.has(hk(c,r));
 
-    let fill='#08081a', stroke='#1a1a3a', lw=0.7;
+    let fill='#080C08', stroke='#1A2A1A', lw=0.7;
     if(hex.terrain===TERRAIN.ASTEROID) fill='#141008';
     if(hex.terrain===TERRAIN.NEBULA) fill='#100818';
     if(hex.owner==='player'){fill='#0a2418';stroke='#00aa55';lw=1;}
     if(hex.owner==='pirate'){fill='#1e0808';stroke='#aa2222';lw=1;}
     if(isRivalOwner(hex.owner)){fill=RIVAL_FILLS[hex.owner];stroke=RIVAL_STROKES[hex.owner];lw=1;}
-    if(hex.owner==='neutral'){fill='#181820';stroke='#8888aa';lw=1;}
+    if(hex.owner==='neutral'){fill='#141418';stroke='#7788aa';lw=1;}
     if(hex.building==='ruins'){fill='#0e0e0e';stroke='#333';lw=0.7;}
-    if(!hex.building&&!hex.owner&&isAdjPlayer(c,r)&&!inR){fill='#08122a';stroke='#223355';lw=0.8;}
-    if(inR){fill='#0a1a2e';stroke='#2266aa';lw=1.2;}
+    if(!hex.building&&!hex.owner&&isAdjPlayer(c,r)&&!inR){fill='#0A160A';stroke='#2A5A2A';lw=0.8;}
+    if(inR){fill='#0C1E0C';stroke='#33AA44';lw=1.2;}
     if(hov){stroke='#ffffff';lw=1.5;}
-    if(sel){stroke='#00ffcc';lw=2.2;}
+    if(sel){stroke='#33ff66';lw=2.2;}
 
     // Draw hex
     const hz=CFG.HEX*cam.zoom;
@@ -3377,8 +3439,8 @@ function render(){
       ctx.beginPath();
       for(let i=0;i<6;i++){const a=Math.PI/180*60*i;const hx=p.x+hz*Math.cos(a),hy=p.y+hz*Math.sin(a);i===0?ctx.moveTo(hx,hy):ctx.lineTo(hx,hy);}
       ctx.closePath();
-      ctx.fillStyle=`rgba(0,255,204,${pulse})`;ctx.fill();
-      ctx.strokeStyle='#00ffcc';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle=`rgba(51,255,102,${pulse})`;ctx.fill();
+      ctx.strokeStyle='#33ff66';ctx.lineWidth=2;ctx.stroke();
     }
 
     // Terrain icons
@@ -3665,10 +3727,10 @@ function render(){
 
     if(isLoop){
       const ofs=1.5*z;
-      drawSampledPath(offsetSamples(samples,ofs),'#4488ff',1);
-      drawSampledPath(offsetSamples(samples,-ofs),'#44ccff',-1);
+      drawSampledPath(offsetSamples(samples,ofs),'#22cc44',1);
+      drawSampledPath(offsetSamples(samples,-ofs),'#44ee66',-1);
     } else {
-      drawSampledPath(samples,'#4488ff',1);
+      drawSampledPath(samples,'#22cc44',1);
     }
   }
 
@@ -3691,7 +3753,7 @@ function render(){
         if(valid) valid=TILE_RES.some(r2=>(G.map[relayDragFrom.col][relayDragFrom.row].stockpile[r2]||0)>0);
       }
     }
-    const color=valid?'#88ccff':'#ff4444';
+    const color=valid?'#22cc44':'#ff4444';
     const dx=tp.x-fp.x, dy=tp.y-fp.y;
     const lineLen=Math.sqrt(dx*dx+dy*dy);
     const angle=Math.atan2(dy,dx);
@@ -3825,8 +3887,8 @@ function render(){
     if(samples.length>=2){
       if(isLoop){
         const ofs=1.5*z;
-        drawPreviewPath(ofsPreview(samples,ofs),'#4488ff',1);
-        drawPreviewPath(ofsPreview(samples,-ofs),'#44ccff',-1);
+        drawPreviewPath(ofsPreview(samples,ofs),'#22cc44',1);
+        drawPreviewPath(ofsPreview(samples,-ofs),'#44ee66',-1);
       } else {
         drawPreviewPath(samples,'#ffffff',1);
       }
@@ -3849,7 +3911,7 @@ function render(){
       const bob=Math.sin(animTime*2.2+selShip.id*1.7)*2.5*z;
       sx=sp.x+10*z; sy=sp.y-14*z+bob;
     }
-    ctx.strokeStyle='#00ffcc';ctx.lineWidth=2;
+    ctx.strokeStyle='#33ff66';ctx.lineWidth=2;
     ctx.beginPath();ctx.arc(sx,sy+3*z,8*z,0,Math.PI*2);ctx.stroke();
   }
   // Fleet selection ring
@@ -3858,7 +3920,7 @@ function render(){
     if(fs.length>0){
       const fp=h2p(fs[0].col,fs[0].row);
       const z=cam.zoom;
-      ctx.strokeStyle='#00ccff';ctx.lineWidth=2;ctx.setLineDash([4*z,3*z]);
+      ctx.strokeStyle='#22cc44';ctx.lineWidth=2;ctx.setLineDash([4*z,3*z]);
       ctx.beginPath();ctx.arc(fp.x,fp.y,CFG.HEX*z*0.7,0,Math.PI*2);ctx.stroke();
       ctx.setLineDash([]);
     }
@@ -3897,25 +3959,6 @@ function render(){
       const shipsHere=G.ships.filter(s=>s.col===selectedHex.col&&s.row===selectedHex.row&&s.hp>0&&s.combat>0);
       for(const s of shipsHere) rv=Math.max(rv,s.range||1);
       if(rv>0) circles.push({cx:hp2.x,cy:hp2.y,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
-    }
-    // 3) All hostile ships (enemy combat ships visible on map)
-    for(const s of G.ships){
-      if(s.hp<=0||s.combat<=0||s.owner==='player') continue;
-      if(G.map[s.col]&&G.map[s.col][s.row]&&G.map[s.col][s.row]._oob) continue;
-      const sp=h2p(s.col,s.row);
-      const bob=Math.sin(animTime*2.2+s.id*1.7)*2.5*z;
-      const rv=s.range||1;
-      circles.push({cx:sp.x+shipOfsX,cy:sp.y+shipOfsY+bob+3*z,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
-    }
-    // 4) All hostile buildings with combat
-    for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
-      const h=G.map[c][r]; if(h._oob) continue;
-      if(!h.building||h.building==='ruins'||!h.owner||h.owner==='player') continue;
-      const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building];
-      if(!bd||(bd.combat||0)<=0) continue;
-      const hp2=h2p(c,r);
-      const rv=bd.range||1;
-      circles.push({cx:hp2.x,cy:hp2.y,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
     }
     // Draw all circles as one merged path (no overlap crosshatch)
     if(circles.length>0){
@@ -4081,7 +4124,9 @@ function renderHexPanel(c,r){
   if(hex.building&&hex.building!=='ruins'){
     const bd=BLDG[hex.building]||EBLDG[hex.building]||TRADE_POSTS[hex.building];
     const oc=ownerHexColor(hex.owner);
-    h+=`<div><strong style="color:${oc}">${bd.name}</strong> <span style="color:#666">(${G.factions[hex.owner]||hex.owner})</span></div>`;
+    const port=hexPortrait(c,r);
+    if(port) h+=`<img src="${port}" alt="" style="display:block;width:132px;height:132px;margin:0 auto 10px auto;border-radius:50%;border:2px solid ${oc};object-fit:cover;">`;
+    h+=`<div><strong style="color:${oc}">${bd.name}</strong> <span style="color:#666">(${hexFaction(c,r)})</span></div>`;
     if(bd.desc) h+=`<div style="color:#888;font-size:12px;">${bd.desc}</div>`;
     h+=`<div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${hex.maxHp>0?(hex.hp/hex.maxHp*100):0}%;background:${hex.hp/hex.maxHp>0.5?'#0a0':hex.hp/hex.maxHp>0.25?'#aa0':'#a00'}"></div></div>`;
     h+=`<div style="font-size:12px;">HP: ${hex.hp}/${hex.maxHp}${bd.combat?' | Combat: '+bd.combat:''}</div>`;
@@ -4113,7 +4158,7 @@ function renderHexPanel(c,r){
 
   // Relay transfer UI
   if(hex.building==='relay'&&hex.owner==='player'&&!hex._relayUsed){
-    h+=`<div style="margin-top:6px;"><div style="color:#88ccff;font-size:13px;margin-bottom:4px;">Transfer resources (1/turn):</div>`;
+    h+=`<div style="margin-top:6px;"><div style="color:#8AAE8A;font-size:13px;margin-bottom:4px;">Transfer resources (1/turn):</div>`;
     h+=`<div style="color:#556;font-size:11px;margin-bottom:6px;">Drag between relay and adjacent building on the map, or use buttons below:</div>`;
     // Pull from adjacent — show building names, not coordinates
     for(const nb of hexNb(c,r)){
@@ -4185,7 +4230,7 @@ function renderHexPanel(c,r){
     for(const s of sh){
       const sd=SHIPS[s.type];
       const oc=ownerHexColor(s.owner);
-      h+=`<div style="margin-bottom:6px;padding:4px;border:1px solid #2a2a4a;border-radius:3px;">`;
+      h+=`<div style="margin-bottom:6px;padding:4px;border:1px solid #2A3E2A;border-radius:3px;">`;
       h+=`<div><strong style="color:${oc}">${sd.name}</strong> <span style="color:#666">(${G.factions[s.owner]||s.owner})</span></div>`;
       h+=`<div style="font-size:11px;color:#888;">HP:${s.hp}/${s.maxHp} ⚔${s.combat} Rng:${s.range||1} 🛡${s.armor||0} Spd:${sd.speed} Crg:${shipTotal(s)}/${s.cargoMax}</div>`;
       if(s.owner==='player'){
@@ -4195,7 +4240,7 @@ function renderHexPanel(c,r){
       h+=`</div>`;
     }
     const playerShipsHere=sh.filter(s=>s.owner==='player'&&s.movesLeft>0);
-    if(playerShipsHere.length>=2) h+=`<button class="action-btn" onclick="selectFleet(${c},${r})" style="margin-top:4px;background:#1a3a5a;">⚓ Select Fleet (${playerShipsHere.length} ships)</button>`;
+    if(playerShipsHere.length>=2) h+=`<button class="action-btn" onclick="selectFleet(${c},${r})" style="margin-top:4px;background:#0E150E;">⚓ Select Fleet (${playerShipsHere.length} ships)</button>`;
     h+=`</div></div>`;
   }
 
@@ -4234,19 +4279,19 @@ function renderHexPanel(c,r){
   if(!hex.building&&(!hex.owner||hex.owner==='player')&&isAdjPlayer(c,r)){
     const avail=sumAdj(c,r);
     h+=`<div class="panel"><div class="panel-title">Build Here</div><div class="panel-content">`;
-    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits} | ☺${popFree()} free</div>`;
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits} | 👤${popFree()} free</div>`;
     for(const[key,def] of Object.entries(BLDG)){
       if(def.canBuild===false) continue;
       const able=canBuildAt(key,c,r);
       const tok=!def.needsTerrain||hex.terrain===def.needsTerrain;
       const costStr=Object.entries(def.cost).map(([r2,a])=>`${a}${RICON[r2]}`).join(' ')||'Free';
-      const popStr=(def.pop||0)>0?` ${def.pop}☺`:'';
+      const popStr=(def.pop||0)>0?` ${def.pop}👤`:'';
       let note='';
       if(!tok) note=` (needs ${def.needsTerrain})`;
       else if(!able){
         if(!canGather(c,r,tileCost(def.cost))) note=' (need more resources nearby)';
         else if(G.credits<creditCost(def.cost)) note=` (need ${creditCost(def.cost)}${RICON.credits})`;
-        else if((def.pop||0)>popFree()) note=` (need ${def.pop}☺, ${popFree()} free)`;
+        else if((def.pop||0)>popFree()) note=` (need ${def.pop}👤, ${popFree()} free)`;
         else note=' (insufficient)';
       }
       const tutHL=(tutCurrentStep()&&tutCurrentStep().tutBuild===key)?' tut-highlight':'';
@@ -4279,7 +4324,10 @@ function renderHexPanel(c,r){
 
 function renderShipPanel(ship){
   const sd=SHIPS[ship.type];
-  let h=`<div class="panel"><div class="panel-title">${sd.name}</div><div class="panel-content">`;
+  const oc=ownerHexColor(ship.owner);
+  const port=getPortrait(ship.owner);
+  let h=`<div class="panel"><div class="panel-title">${sd.name} <span style="color:#666">(${G.factions[ship.owner]||ship.owner})</span></div><div class="panel-content">`;
+  if(port&&ship.owner!=='player') h+=`<img src="${port}" alt="" style="display:block;width:132px;height:132px;margin:0 auto 10px auto;border-radius:50%;border:2px solid ${oc};object-fit:cover;">`;
   h+=`<div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${ship.hp/ship.maxHp*100}%;background:${ship.hp/ship.maxHp>0.5?'#0a0':'#aa0'}"></div></div>`;
   h+=`<div class="stat-row"><span class="stat-label">HP</span><span class="stat-val">${ship.hp}/${ship.maxHp}</span></div>`;
   h+=`<div class="stat-row"><span class="stat-label">Combat</span><span class="stat-val">⚔ ${ship.combat}</span></div>`;
@@ -4320,18 +4368,18 @@ function renderShipPanel(ship){
   // Actions
   h+=`<div class="panel"><div class="panel-title">Actions</div><div class="panel-content">`;
   if(ship.movesLeft>0){
-    h+=`<div style="color:#88ccff;font-size:12px;margin-bottom:4px;">Right-click a hex to move (range: ${ship.movesLeft})`;
+    h+=`<div style="color:#8AAE8A;font-size:12px;margin-bottom:4px;">Right-click a hex to move (range: ${ship.movesLeft})`;
     if(ship.cargoMax>0&&autoCargoTransfer) h+=`<br>Auto-load/unload on arrival`;
     h+=`</div>`;
   }
   else h+=`<div style="color:#666;font-size:12px;margin-bottom:4px;">No moves this turn.</div>`;
   if(ship.cargoMax>0){
-    const acStyle=autoCargoTransfer?'background:#1a4a2a;border-color:#2a6a3a;color:#4c4;':'background:#2a2a3a;border-color:#3a3a5a;color:#888;';
+    const acStyle=autoCargoTransfer?'background:#1a4a2a;border-color:#2a6a3a;color:#4c4;':'background:#1A261A;border-color:#2A3E2A;color:#5A7A5A;';
     h+=`<button onclick="autoCargoTransfer=!autoCargoTransfer;updateSidebar();" style="${acStyle}padding:3px 8px;border-radius:4px;border:1px solid;cursor:pointer;font-size:11px;margin-bottom:4px;">${autoCargoTransfer?'✓':' '} Auto-transfer cargo on move</button>`;
     h+=`<div style="color:#666;font-size:11px;margin-bottom:4px;">Keys: L = load, U = unload, Tab = next ship</div>`;
   }
   if(ship.combat>0){
-    const afStyle=ship.autofire?'background:#4a1a1a;border-color:#6a2a2a;color:#f44;':'background:#2a2a3a;border-color:#3a3a5a;color:#888;';
+    const afStyle=ship.autofire?'background:#4a1a1a;border-color:#6a2a2a;color:#f44;':'background:#1A261A;border-color:#2A3E2A;color:#5A7A5A;';
     h+=`<button onclick="toggleAutofire(${ship.id})" style="${afStyle}padding:3px 8px;border-radius:4px;border:1px solid;cursor:pointer;font-size:11px;margin-bottom:4px;">${ship.autofire?'✓':' '} Autofire</button>`;
   }
 
@@ -4371,11 +4419,11 @@ function renderShipPanel(ship){
 
   // Path controls
   if(ship.owner==='player'){
-    h+=`<div style="margin-top:8px;padding:6px;border:1px solid #1a2a5a;border-radius:4px;background:#0a0a1a;">`;
-    const loopStyle=ship.pathLoop?'background:#1a4a2a;border-color:#2a6a3a;color:#4c4;':'background:#2a2a3a;border-color:#3a3a5a;color:#888;';
+    h+=`<div style="margin-top:8px;padding:6px;border:1px solid #2A3E2A;border-radius:4px;background:#080C08;">`;
+    const loopStyle=ship.pathLoop?'background:#1a4a2a;border-color:#2a6a3a;color:#4c4;':'background:#1A261A;border-color:#2A3E2A;color:#5A7A5A;';
     h+=`<button onclick="togglePathLoop(${ship.id})" style="${loopStyle}padding:3px 8px;border-radius:4px;border:1px solid;cursor:pointer;font-size:11px;margin-right:4px;">${ship.pathLoop?'🔁 Loop':'⏩ One-way'}</button>`;
     if(ship.path&&ship.path.length>0){
-      h+=`<span style="color:#4488ff;font-size:12px;margin-right:4px;">📍 ${ship.path.length} waypoint${ship.path.length>1?'s':''}</span>`;
+      h+=`<span style="color:#22cc44;font-size:12px;margin-right:4px;">📍 ${ship.path.length} waypoint${ship.path.length>1?'s':''}</span>`;
       h+=`<button class="action-btn danger" onclick="clearShipPath(${ship.id})" style="font-size:11px;padding:3px 8px;">✕ Clear</button>`;
     } else {
       h+=`<span style="color:#555;font-size:11px;">Drag from ship to set path</span>`;
@@ -4391,11 +4439,11 @@ function renderShipPanel(ship){
 function renderFleetPanel(ships){
   const mm=fleetMinMoves();
   let h=`<div class="panel"><div class="panel-title">⚓ Fleet (${ships.length} ships)</div><div class="panel-content">`;
-  h+=`<div style="color:#88ccff;font-size:12px;margin-bottom:6px;">Location: (${ships[0].col}, ${ships[0].row})</div>`;
+  h+=`<div style="color:#8AAE8A;font-size:12px;margin-bottom:6px;">Location: (${ships[0].col}, ${ships[0].row})</div>`;
   // Ship list
   for(const s of ships){
     const sd=SHIPS[s.type];
-    h+=`<div style="margin-bottom:4px;padding:3px;border:1px solid #1a2a4a;border-radius:3px;display:flex;justify-content:space-between;align-items:center;">`;
+    h+=`<div style="margin-bottom:4px;padding:3px;border:1px solid #2A3E2A;border-radius:3px;display:flex;justify-content:space-between;align-items:center;">`;
     h+=`<div><strong style="color:#0e8">${sd.name}</strong> <span style="color:#666;font-size:11px;">HP:${s.hp}/${s.maxHp} ⚔${s.combat} Mv:${s.movesLeft}</span></div>`;
     h+=`<button class="action-btn" onclick="selectShip(${s.id})" style="padding:1px 6px;font-size:10px;">Solo</button>`;
     h+=`</div>`;
@@ -4403,7 +4451,7 @@ function renderFleetPanel(ships){
   h+=`</div></div>`;
   // Fleet actions
   h+=`<div class="panel"><div class="panel-title">Fleet Actions</div><div class="panel-content">`;
-  if(mm>0) h+=`<div style="color:#88ccff;font-size:12px;margin-bottom:4px;">Right-click a highlighted hex to move fleet (range: ${mm})</div>`;
+  if(mm>0) h+=`<div style="color:#8AAE8A;font-size:12px;margin-bottom:4px;">Right-click a highlighted hex to move fleet (range: ${mm})</div>`;
   else h+=`<div style="color:#666;font-size:12px;margin-bottom:4px;">No fleet moves — some ships have 0 moves left.</div>`;
   h+=`<div style="font-size:11px;color:#888;margin-bottom:6px;">Fleet moves at the speed of the slowest ship.</div>`;
   h+=`<div style="margin-top:8px;"><button class="action-btn" onclick="deselect()">Deselect</button></div>`;
@@ -4922,7 +4970,7 @@ function startGame(levelKey){
     showTutorial(0);
     log('Tutorial mode — follow the popup hints to learn the game.','info');
   } else {
-    log('Your Command Center has starting resources. Build a Solar Array first.','info');
+    log('Your Command Center has starting resources. Build mines and solar arrays to get your economy started.','info');
   }
   resizeCanvas();
   updateAll();
