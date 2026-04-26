@@ -39,6 +39,7 @@
   --res-food: #44cc66;
   --res-credits: #ffcc00;
   --res-stardust: #cc66ff;
+  --res-cores: #ff8844;
   --res-pop: #dd88dd;
   --res-fleet: #cc88ff;
 }
@@ -67,6 +68,7 @@ body {
 .res-food { color: var(--res-food); }
 .res-credits { color: var(--res-credits); }
 .res-stardust { color: var(--res-stardust); }
+.res-cores { color: var(--res-cores); }
 .res-pop { color: var(--res-pop); }
 .res-fleet { color: var(--res-fleet); }
 #turn-info { font-size: clamp(15px, 1.1vw, 25px); color: var(--text-dim); }
@@ -224,6 +226,67 @@ body {
   border: none; border-radius: 4px; font-size: 17px; font-weight: bold;
   cursor: pointer; font-family: inherit;
 }
+/* Sidebar toggle */
+#sidebar-toggle {
+  display: none; position: fixed; bottom: 14px; right: 14px; z-index: 80;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--accent-dim); color: var(--bg-deep); border: none;
+  font-size: 22px; font-weight: bold; cursor: pointer;
+  box-shadow: 0 2px 12px var(--accent-glow-strong);
+  font-family: inherit; line-height: 48px; text-align: center;
+}
+#sidebar-toggle:active { background: var(--accent); }
+#sidebar.open { transform: translateX(0); }
+
+/* ===== MOBILE / RESPONSIVE ===== */
+@media (max-width: 900px) {
+  body { font-size: 14px; }
+  #top-bar {
+    flex-wrap: wrap; padding: 6px 10px; gap: 6px 12px; min-height: 0;
+  }
+  #top-bar .resources { gap: 8px; flex-wrap: wrap; justify-content: center; order: 2; width: 100%; }
+  .resource-item { font-size: 13px; flex-direction: row; gap: 3px; }
+  .resource-item .res-label { display: none; }
+  #turn-info { font-size: 13px; order: 0; }
+  #btn-end-turn { padding: 8px 14px; font-size: 13px; order: 1; }
+  #btn-next-unit { padding: 8px 10px; font-size: 12px; order: 1; margin-right: 4px; }
+  #sidebar {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 85vw; max-width: 400px;
+    z-index: 70; transform: translateX(100%); transition: transform 0.25s ease;
+    border-left: 2px solid var(--border-base);
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-toggle { display: block; }
+  #log-panel { height: 70px; font-size: 12px; padding: 4px 8px; }
+  .panel { padding: 10px 12px; }
+  .panel-title { font-size: 13px; }
+  .panel-content { font-size: 13px; }
+  .build-btn { padding: 10px 10px; font-size: 13px; min-height: 44px; }
+  .action-btn { padding: 8px 12px; font-size: 13px; min-height: 44px; }
+  #tutorial-popup { bottom: 90px; max-width: 90vw; padding: 14px 16px; font-size: 13px; }
+  #event-popup { bottom: 90px; max-width: 92vw; min-width: 0; padding: 14px 16px; }
+  #event-popup p { font-size: 13px; }
+  #evt-portrait { width: 100px; height: 100px; font-size: 44px; margin: 0 12px 8px 0; }
+  #evt-buttons button { padding: 10px 12px; font-size: 13px; min-height: 44px; min-width: 90px; }
+  #intro-box { padding: 20px; width: 95vw; }
+  .level-card { padding: 10px 12px; }
+  .level-card h3 { font-size: 14px; min-width: 100px; }
+  .level-card p { font-size: 12px; }
+  #end-box { padding: 24px; max-width: 92vw; }
+}
+@media (max-width: 500px) {
+  #top-bar { padding: 4px 6px; gap: 4px 8px; }
+  #top-bar .resources { gap: 6px; }
+  .resource-item { font-size: 12px; }
+  #turn-info { font-size: 12px; }
+  #btn-end-turn { padding: 7px 10px; font-size: 12px; }
+  #btn-next-unit { padding: 7px 8px; font-size: 11px; }
+  #sidebar { width: 100vw; max-width: none; }
+  #log-panel { height: 50px; font-size: 11px; }
+  #tutorial-popup { bottom: 60px; }
+  #event-popup { bottom: 60px; }
+  #evt-portrait { width: 72px; height: 72px; font-size: 32px; }
+}
 </style>
 </head>
 <body>
@@ -233,33 +296,38 @@ body {
     <h1>COLONY</h1>
     <div class="subtitle">SECTOR SUPREMACY</div>
     <p>Choose your mission:</p>
+    <div style="text-align:center;margin-bottom:12px;">
+      <span style="color:#888;font-size:13px;">Faction:</span>
+      <button id="faction-alliance" onclick="selectFaction('alliance')" style="margin:0 4px;padding:4px 12px;border-radius:4px;cursor:pointer;border:2px solid #33ff66;background:#0a1a0a;color:#33ff66;font-weight:bold;">🌐 1000 Worlds Alliance</button>
+      <button id="faction-voton" onclick="selectFaction('voton')" style="margin:0 4px;padding:4px 12px;border-radius:4px;cursor:pointer;border:2px solid #333;background:#0a0a1a;color:#666;">🔮 Voton Empire</button>
+    </div>
     <div class="level-grid">
-      <div class="level-card tutorial" onclick="startGame('tutorial')">
+      <div class="level-card tutorial" onclick="startGame('tutorial',selectedFaction)">
         <h3>📘 Tutorial</h3>
         <div class="level-diff" style="color:#33ff66;">Guided</div>
         <p>Learn the ropes step by step. Build your colony, use transports, construct ships, and defeat a Rogue Drone outpost.</p>
       </div>
-      <div class="level-card" onclick="startGame('skirmish')">
+      <div class="level-card" onclick="startGame('skirmish',selectedFaction)">
         <h3>⚔ Pirate Skirmish</h3>
         <div class="level-diff" style="color:#4c4;">Easy</div>
         <p>Rognar's Pirates threaten the sector. No rival colony — just you vs the pirates.</p>
       </div>
-      <div class="level-card" onclick="startGame('frontier')">
+      <div class="level-card" onclick="startGame('frontier',selectedFaction)">
         <h3>🌌 Frontier</h3>
         <div class="level-diff" style="color:#cc4;">Medium</div>
         <p>Void Reavers and the Descendants of Cham compete for resources. Eliminate both to claim the sector.</p>
       </div>
-      <div class="level-card" onclick="startGame('hostile')">
+      <div class="level-card" onclick="startGame('hostile',selectedFaction)">
         <h3>💀 Hostile Sector</h3>
         <div class="level-diff" style="color:#f44;">Hard</div>
         <p>The Hegemony is well-established and the Iron Fangs are aggressive. You start with fewer resources and they start stronger.</p>
       </div>
-      <div class="level-card" onclick="startGame('gauntlet')">
+      <div class="level-card" onclick="startGame('gauntlet',selectedFaction)">
         <h3>🔥 Gauntlet</h3>
         <div class="level-diff" style="color:#f4f;">Brutal</div>
         <p>The Dreadlord commands two bases and an advanced fleet. Scarce resources. Only the best commanders survive.</p>
       </div>
-      <div class="level-card" onclick="startGame('dreadlord')">
+      <div class="level-card" onclick="startGame('dreadlord',selectedFaction)">
         <h3>☠️ Dreadlord</h3>
         <div class="level-diff" style="color:#f00;">Nightmare</div>
         <p>Three rival factions and two pirate bases vie for control. Resources are scarce and enemies are ruthless. Total war.</p>
@@ -295,11 +363,13 @@ body {
   <div id="top-bar">
     <div id="turn-info">Turn 1</div>
     <div class="resources">
+      <div class="resource-item res-crystal" style="display:none;color:#66ddff;"><span class="res-label">Crystal</span><span class="res-value"><span>🔮</span> <span id="res-crystal">0</span></span></div>
       <div class="resource-item res-minerals"><span class="res-label">Minerals</span><span class="res-value"><span>◆</span> <span id="res-minerals">0</span><span id="res-minerals-d" style="font-size:12px;margin-left:3px;"></span></span></div>
       <div class="resource-item res-energy"><span class="res-label">Energy</span><span class="res-value"><span>⚡</span> <span id="res-energy">0</span><span id="res-energy-d" style="font-size:12px;margin-left:3px;"></span></span></div>
       <div class="resource-item res-food"><span class="res-label">Food</span><span class="res-value"><span>🌿</span> <span id="res-food">0</span><span id="res-food-d" style="font-size:12px;margin-left:3px;"></span></span></div>
       <div class="resource-item res-credits"><span class="res-label">Credits</span><span class="res-value"><span>¤</span> <span id="res-credits">0</span><span id="res-credits-d" style="font-size:12px;margin-left:3px;"></span></span></div>
       <div class="resource-item res-stardust"><span class="res-label">Stardust</span><span class="res-value"><span>✦</span> <span id="res-stardust">0</span><span id="res-stardust-d" style="font-size:12px;margin-left:3px;"></span></span></div>
+      <div class="resource-item res-cores" style="display:none;"><span class="res-label">Cores</span><span class="res-value"><span>⬡</span> <span id="res-cores">0</span><span id="res-cores-d" style="font-size:12px;margin-left:3px;"></span></span></div>
     </div>
     <div class="resource-item res-pop"><span class="res-label">Population</span><span class="res-value"><span>👤</span> <span id="res-pop-used">0</span>/<span id="res-pop-cap">5</span></span></div>
     <div class="resource-item res-fleet"><span class="res-label">Fleet</span><span class="res-value"><span>⚔</span> <span id="fleet-info">0</span></span></div>
@@ -308,6 +378,7 @@ body {
   <div id="main-area">
     <div id="map-container"><canvas id="map"></canvas></div>
     <div id="sidebar"><div id="sidebar-content"></div></div>
+    <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
   </div>
   <div id="log-panel"></div>
 </div>
@@ -316,6 +387,9 @@ body {
 <script src="data/ships.js"></script>
 <script src="data/tradeposts.js"></script>
 <script src="data/upgrades.js"></script>
+<script src="data/voton_buildings.js"></script>
+<script src="data/voton_ships.js"></script>
+<script src="data/voton_upgrades.js"></script>
 <script>
 // ============================================================
 // CONFIG
@@ -352,11 +426,53 @@ function applyShapeMask(m,cols,rows,shape){
   }
 }
 
-const RES = ['minerals','energy','food','credits','stardust'];
+const RES = ['minerals','energy','food','credits','stardust','cores'];
 
 const TILE_RES = ['minerals','food','stardust'];
-const RICON = { minerals:'◆', energy:'⚡', food:'🌿', credits:'¤', stardust:'✦' };
-const RCOL = { minerals:'#cc8844', energy:'#4488ff', food:'#44cc66', credits:'#ffcc00', stardust:'#cc66ff' };
+const VOTON_TILE_RES = ['minerals','food','stardust','cores'];
+function pTileRes(){ return isVoton()?VOTON_TILE_RES:TILE_RES; }
+const RICON = { minerals:'◆', energy:'⚡', food:'🌿', credits:'¤', stardust:'✦', crystal:'🔮', cores:'⬣' };
+const RCOL = { minerals:'#cc8844', energy:'#4488ff', food:'#44cc66', credits:'#ffcc00', stardust:'#cc66ff', crystal:'#66ddff', cores:'#ff8844' };
+
+// ============================================================
+// FACTION ABSTRACTION
+// ============================================================
+// Returns the correct data tables for the player's chosen faction.
+function isVoton(){ return G && G.playerFaction==='voton'; }
+function pBLDG(){ return isVoton()?VOTON_BLDG:BLDG; }
+function pSHIPS(){ return isVoton()?VOTON_SHIPS:SHIPS; }
+function pUPGRADES(){ return isVoton()?VOTON_UPGRADES:UPGRADES; }
+function pHQ(){ return isVoton()?'voton_nexus':'command_center'; }
+function pSpaceport(){ return isVoton()?'voton_spaceport':'spaceport'; }
+function pRelay(){ return isVoton()?'teleporter':'relay'; }
+function pResearchLab(){ return isVoton()?'voton_research_lab':'research_lab'; }
+function pStarterShip(){ return isVoton()?'drone':'hovertranspo'; }
+function pStarterCount(){ return isVoton()?3:1; }
+// Crystal level: count non-starved crystal-producing buildings
+function crystalLevel(){
+  if(!isVoton()) return 0;
+  let lvl=0;
+  const pb=pBLDG();
+  for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
+    const h=G.map[c][r];
+    if(h.owner==='player'&&h.building){
+      const def=pb[h.building];
+      if(def&&def.crystalProd&&!h._starved) lvl+=def.crystalProd;
+    }
+  }
+  return lvl;
+}
+// Check crystal requirement for a building or ship def
+function meetsCrystalReq(def){ return !def.crystalReq || crystalLevel()>=def.crystalReq; }
+// Look up any building definition across all tables
+function anyBldg(key){ return BLDG[key]||EBLDG[key]||TRADE_POSTS[key]||VOTON_BLDG[key]; }
+// Bank resource icon/name for current faction
+function bankIcon(){ return isVoton()?RICON.cores:RICON.credits; }
+function bankName(){ return isVoton()?'Stellar Cores':'Credits'; }
+function bankStr(){ return isVoton()?'':` | Bank: ${RICON.credits}${G.credits}`; }
+// Look up any ship definition across all tables
+function shipDef(ship){ return SHIPS[ship.type]||VOTON_SHIPS[ship.type]; }
+function shipDefByType(type){ return SHIPS[type]||VOTON_SHIPS[type]; }
 
 // ============================================================
 // GAME STATE
@@ -374,7 +490,7 @@ let animTime = 0, shipAnims = []; // shipAnims: [{shipId, fromX, fromY, toX, toY
 let beamAnims = []; // [{fromCol,fromRow,toCol,toRow,t,duration,color,count}]
 function dirtyCache(){_clusterCache=null;_incomeCache=null;}
 
-function freshStock() { return { minerals:0, energy:0, food:0, credits:0, stardust:0 }; }
+function freshStock() { return { minerals:0, energy:0, food:0, credits:0, stardust:0, cores:0 }; }
 
 // ============================================================
 // LEVEL CONFIGS
@@ -538,7 +654,7 @@ const TUTORIAL_STEPS = [
     highlight(){ return [{col:4,row:4}]; }
   },
   { title: 'Population & Housing', portrait: 'assets/tutorial.png',
-    text: 'See the population counter (👤) in the top bar? Every ship and some buildings require population to operate. Your CC provides 5 pop capacity, but you\'ll quickly need more. Habitats add +10 capacity each — without enough housing, you can\'t build new ships or crew larger buildings.',
+    text: 'See the population counter (👤) in the top bar? Some buildings require population to operate. Your CC provides 5 pop capacity, but you\'ll quickly need more. Habitats add +10 capacity each — without enough housing, you can\'t crew larger buildings. Ships don\'t require population, so build as many as you can afford!',
     tutTopHL: ['pop']
   },
   { title: 'Step 6: Build a Habitat',
@@ -708,6 +824,85 @@ function countShipsNear(owner,col,row,range){
 // Each: { id, levels:[], check(G)->bool, build(G)->eventObj }
 // check() should be fast; build() creates the dialog content
 const EVENT_SCRIPTS = [
+  // ============ LEVEL INTRO MESSAGES ============
+  {
+    id: 'skirmish_intro',
+    levels: ['skirmish'],
+    check(G){ return G.turn===1; },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Incoming Transmission`,
+        text:`"Well, well. A shiny new colony, all alone out here with no fleet to protect it. I'm Rognar, and this sector belongs to ME. My raiders are already in position. You've got maybe a handful of turns before we come knocking. Build fast, Commander — or don't. Makes no difference to us."`,
+        icon:'☠️',
+        choices:[{ label:'We\'ll be ready' }]
+      };
+    }
+  },
+  {
+    id: 'frontier_intro',
+    levels: ['frontier'],
+    check(G){ return G.turn===1; },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Open Broadcast`,
+        text:`"Attention, unregistered colony. This sector is Void Reaver territory. We don't negotiate, we don't share, and we don't leave survivors. You have been warned."`,
+        icon:'☠️',
+        choices:[{ label:'Noted' }]
+      };
+    }
+  },
+  {
+    id: 'frontier_intro_rival',
+    levels: ['frontier'],
+    check(G){ return G.turn===2; },
+    build(G){
+      return {
+        faction:'rival', portrait:getPortrait('rival'), title:`${G.factions.rival} — Diplomatic Channel`,
+        text:`"Commander, I am Warden Cham of the Descendants. We've been in this sector for generations. The Void Reavers are a mutual nuisance, but make no mistake — we will not yield our territory to you either. Tread carefully."`,
+        icon:'⚔️',
+        choices:[{ label:'Understood' }]
+      };
+    }
+  },
+  {
+    id: 'hostile_intro',
+    levels: ['hostile'],
+    check(G){ return G.turn===1; },
+    build(G){
+      return {
+        faction:'rival', portrait:getPortrait('rival'), title:`${G.factions.rival} — Official Notice`,
+        text:`"This is Hegemony Central Command. Your colony charter is not recognized in this sector. We have a well-established presence here and we will defend it with overwhelming force. Withdraw immediately or face the consequences."`,
+        icon:'⚔️',
+        choices:[{ label:'We\'re staying' }]
+      };
+    }
+  },
+  {
+    id: 'hostile_intro_pirate',
+    levels: ['hostile'],
+    check(G){ return G.turn===2; },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Snarl`,
+        text:`"Ha! Another colony for the Iron Fangs to tear apart. The Hegemony thinks they run this sector, but between you and me, Commander? We're the ones you should be afraid of. We don't issue warnings — we issue death sentences."`,
+        icon:'☠️',
+        choices:[{ label:'Charming' }]
+      };
+    }
+  },
+  {
+    id: 'gauntlet_intro',
+    levels: ['gauntlet'],
+    check(G){ return G.turn===1; },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`Stellar Cult — Proclamation`,
+        text:`"The stars have spoken, Commander. Your arrival was foretold — a sacrifice to fuel our ascension. Every base in this sector serves the Cult. Every ship, every gun. You are surrounded, outnumbered, and utterly alone. The Convergence is inevitable."`,
+        icon:'☠️',
+        choices:[{ label:'We\'ll see about that' }]
+      };
+    }
+  },
   // --- PIRATE EVENTS ---
   {
     id: 'pirate_demand',
@@ -817,13 +1012,128 @@ const EVENT_SCRIPTS = [
           { label:'Accept (15 credits → 30 minerals)', effect(G){
             if(G.credits>=15){
               G.credits-=15;
-              const cc=findBldg('command_center','player');
+              const cc=findBldg(pHQ(),'player');
               if(cc) G.map[cc.col][cc.row].stockpile.minerals+=30;
               log(`Traded 15 credits for 30 minerals with ${G.factions.rival}.`,'good');
             }
           }},
           { label:'Decline', effect(G){ log(`Declined trade offer from ${G.factions.rival}.`,'event'); }}
         ]
+      };
+    }
+  },
+  // --- MILESTONE EVENTS ---
+  {
+    id: 'player_first_warship',
+    levels: ['skirmish','frontier','hostile','gauntlet'],
+    check(G){
+      return G.ships.some(s=>s.owner==='player'&&s.hp>0&&s.combat>0);
+    },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Intercepted Signal`,
+        text:`"So you've built yourself a warship. How cute. One ship won't save you, Commander. We've been raiding sectors since before your colony was a blueprint. But by all means, send it our way — we could use the target practice."`,
+        icon:'☠️',
+        choices:[{ label:'Just the first of many' }]
+      };
+    }
+  },
+  {
+    id: 'player_first_warship_rival',
+    levels: ['frontier','hostile'],
+    check(G){
+      if(G.turn<4) return false;
+      const pCombat=G.ships.filter(s=>s.owner==='player'&&s.hp>0&&s.combat>0);
+      return pCombat.length>=3;
+    },
+    build(G){
+      return {
+        faction:'rival', portrait:getPortrait('rival'), title:`${G.factions.rival} — Intelligence Report`,
+        text:`"Our scouts report you're assembling a fleet, Commander. A word of caution: we've seen colonies arm up before. They always think they're building a deterrent. They always find out they've built a provocation. Don't make us demonstrate the difference."`,
+        icon:'⚔️',
+        choices:[{ label:'Duly noted' }]
+      };
+    }
+  },
+  {
+    id: 'player_spots_enemy_spaceport',
+    levels: ['skirmish','frontier','hostile','gauntlet'],
+    check(G){
+      // Pirate spaceport visible (player has a ship within 5 hexes of it)
+      const ps=findBldg('spaceport','pirate'); if(!ps) return false;
+      return G.ships.some(s=>s.owner==='player'&&s.hp>0&&hexDist(s.col,s.row,ps.col,ps.row)<=5);
+    },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Warning`,
+        text:`"You're getting close to our shipyard, Commander. That's a very dangerous place to be snooping around. Every turn, another warship rolls off that production line. You really want to see what comes out next?"`,
+        icon:'☠️',
+        choices:[{ label:'Thanks for the intel' }]
+      };
+    }
+  },
+  {
+    id: 'player_first_kill',
+    levels: ['skirmish','frontier','hostile','gauntlet'],
+    check(G){
+      return G.turn>=3 && G._pirateShipsDestroyed>=1;
+    },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Fury`,
+        text:`"You destroyed one of our ships?! That crew had families, Commander! Well... no, they didn't. They were pirates. But still — you'll regret this. NOBODY sinks a ${G.factions.pirate} vessel and lives to brag about it!"`,
+        icon:'☠️',
+        choices:[{ label:'Apparently we do' }]
+      };
+    }
+  },
+  {
+    id: 'rival_spaceport_spotted',
+    levels: ['frontier','hostile'],
+    check(G){
+      const rs=findBldg('spaceport','rival'); if(!rs) return false;
+      return G.ships.some(s=>s.owner==='player'&&s.hp>0&&hexDist(s.col,s.row,rs.col,rs.row)<=5);
+    },
+    build(G){
+      return {
+        faction:'rival', portrait:getPortrait('rival'), title:`${G.factions.rival} — Secure Channel`,
+        text:`"Commander, I trust your scouts stumbling near our shipyard is an accident and not a deliberate provocation. Our fleet construction is strictly defensive, of course. But I would recommend your ships maintain a respectful distance."`,
+        icon:'⚔️',
+        choices:[{ label:'Of course' }]
+      };
+    }
+  },
+  {
+    id: 'player_large_fleet',
+    levels: ['skirmish','frontier','hostile','gauntlet'],
+    check(G){
+      if(G.turn<8) return false;
+      const pCombat=G.ships.filter(s=>s.owner==='player'&&s.hp>0&&s.combat>0);
+      return pCombat.length>=6;
+    },
+    build(G){
+      const count=G.ships.filter(s=>s.owner==='player'&&s.hp>0&&s.combat>0).length;
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Encrypted Channel`,
+        text:`"Boss, uh... the colony has ${count} combat ships now. That's more than we expected. A LOT more. Should we... maybe relocate? ...Wait, is this channel encrypted? ...Hello?!"`,
+        icon:'☠️',
+        choices:[{ label:'No. No it isn\'t.' }]
+      };
+    }
+  },
+  {
+    id: 'pirate_base_destroyed',
+    levels: ['skirmish','frontier','hostile','gauntlet'],
+    check(G){
+      if(G.turn<4) return false;
+      return !findBldg('pirate_base','pirate');
+    },
+    build(G){
+      return {
+        faction:'pirate', portrait:getPortrait('pirate'), title:`${G.factions.pirate} — Last Transmission`,
+        text:`"Our base... you actually destroyed it. Fine. You win THIS round, Commander. But we're not done. We're never done. The ${G.factions.pirate} will find a new sector, rebuild, and come back twice as strong. Remember this day."`,
+        icon:'☠️',
+        choices:[{ label:'Good riddance' }]
       };
     }
   },
@@ -954,14 +1264,15 @@ function checkEvents(){
   if(_eventQueue.length>0) showEvent(_eventQueue.shift());
 }
 
-function newGame(levelKey) {
+function newGame(levelKey, playerFaction) {
   const level=LEVELS[levelKey||'frontier'];
   const teams=Object.assign({},DEFAULT_TEAMS,level.teams||{});
   const factions=Object.assign({},DEFAULT_FACTIONS,level.factions||{});
   _firedEvents={}; _eventQueue=[];
+  const pf=playerFaction||'alliance';
   return { turn:1, gameOver:false, map:[], ships:[], pirateP:0, rivalP:0,
-    credits:level.startCredits, rivalCredits:{rival:0,rival2:0,rival3:0}, energySurplus:0, popCap:5, upgrades:{},
-    level:levelKey||'frontier', teams, factions };
+    credits:level.startCredits, rivalCredits:{rival:0,rival2:0,rival3:0}, energySurplus:0, popCap:pf==='voton'?4:5, upgrades:{},
+    level:levelKey||'frontier', teams, factions, playerFaction:pf, _pirateShipsDestroyed:0 };
 }
 
 // ============================================================
@@ -1218,7 +1529,7 @@ function genMap() {
 
   // ---------- PLAYER START ----------
   m[pCol][pRow].terrain=TERRAIN.SPACE;
-  setBldg(m,pCol,pRow,'command_center','player');
+  setBldg(m,pCol,pRow,pHQ(),'player');
   m[pCol][pRow].stockpile={minerals:lvl.startMinerals,energy:0,food:lvl.startFood,credits:0,stardust:0};
 
   // ---------- TRADE POSTS ----------
@@ -1375,7 +1686,7 @@ function genMap() {
 }
 
 function setBldg(m,c,r,key,owner){
-  const def=BLDG[key]||EBLDG[key]||TRADE_POSTS[key];
+  const def=BLDG[key]||EBLDG[key]||TRADE_POSTS[key]||VOTON_BLDG[key];
   m[c][r].building=key; m[c][r].owner=owner;
   m[c][r].hp=def.hp; m[c][r].maxHp=def.hp;
 }
@@ -1432,7 +1743,7 @@ function getConnectedSet(){
 // ============================================================
 function tileCost(cost){
   const tc={};
-  for(const[res,amt] of Object.entries(cost)) if(res==='minerals'||res==='food'||res==='stardust') tc[res]=amt;
+  for(const[res,amt] of Object.entries(cost)) if(res==='minerals'||res==='food'||res==='stardust'||res==='cores') tc[res]=amt;
   return tc;
 }
 function creditCost(cost){ return cost.credits||0; }
@@ -1450,7 +1761,7 @@ function adjSources(c,r){
 
 function sumAdj(c,r){
   const t=freshStock();
-  for(const s of adjSources(c,r)) for(const res of TILE_RES) t[res]+=s.stockpile[res];
+  for(const s of adjSources(c,r)) for(const res of pTileRes()) t[res]+=s.stockpile[res];
   return t;
 }
 
@@ -1476,11 +1787,12 @@ function doGather(c,r,cost){
 
 function totalRes(){
   const t=freshStock();
+  const tr=pTileRes();
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
     if(G.map[c][r].owner==='player'&&G.map[c][r].building)
-      for(const res of TILE_RES) t[res]+=G.map[c][r].stockpile[res];
+      for(const res of tr) t[res]+=G.map[c][r].stockpile[res]||0;
   }
-  for(const s of G.ships) if(s.owner==='player') for(const res of TILE_RES) t[res]+=(s.cargo[res]||0);
+  for(const s of G.ships) if(s.owner==='player') for(const res of tr) t[res]+=(s.cargo[res]||0);
   t.credits=G.credits;
   t.energy=G.energySurplus;
   return t;
@@ -1490,13 +1802,14 @@ function totalRes(){
 // PRODUCTION
 // ============================================================
 // Processing priority: producers first, then consumers by complexity
-const PROD_ORDER=['command_center','solar_array','relay','mine','dust_siphon','hydroponics','habitat','factory','spaceport','research_lab','defense_turret','missile_battery'];
+const PROD_ORDER=['command_center','voton_nexus','solar_array','crystal_shrine','relay','teleporter','mine','voton_mine','dust_siphon','voton_dust_siphon','reprocessor','hydroponics','voton_farm','habitat','voton_habitat','factory','voton_factory','spaceport','voton_spaceport','research_lab','voton_research_lab','defense_turret','voton_turret','missile_battery','voton_artillery','shield_generator'];
 
 function getBuildingsByOrder(){
   const list=[];
+  const pb=pBLDG();
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
     const h=G.map[c][r];
-    if(h.owner==='player'&&h.building&&BLDG[h.building]) list.push({c,r,h,def:BLDG[h.building]});
+    if(h.owner==='player'&&h.building&&pb[h.building]) list.push({c,r,h,def:pb[h.building]});
   }
   list.sort((a,b)=>{
     const ai=PROD_ORDER.indexOf(a.h.building), bi=PROD_ORDER.indexOf(b.h.building);
@@ -1506,9 +1819,9 @@ function getBuildingsByOrder(){
 }
 
 function effectiveEProd(building){
-  const def=BLDG[building]; if(!def) return 0;
+  const def=anyBldg(building); if(!def) return 0;
   let e=def.prod.energy||0;
-  if(building==='reactor'&&hasUpgrade('harmonic_containment')) e+=UPGRADES.harmonic_containment.bonus;
+  if(building==='reactor'&&hasUpgrade('harmonic_containment')) e+=pUPGRADES().harmonic_containment.bonus;
   return e;
 }
 
@@ -1524,11 +1837,11 @@ function runProduction(){
     for(const key of cluster){
       const c=Math.floor(key/100), r=key%100;
       const h=G.map[c][r];
-      const def=BLDG[h.building]; if(!def) continue;
+      const def=anyBldg(h.building); if(!def) continue;
       eProd+=effectiveEProd(h.building);
       eCons+=(def.cons.energy||0);
     }
-    const ok=eProd>=eCons;
+    const ok=isVoton()?true:(eProd>=eCons);
     for(const key of cluster) energyOk.set(key,ok);
     totalEProd+=eProd; totalECons+=eCons;
   }
@@ -1574,7 +1887,7 @@ function runProduction(){
       const pop=b.def.pop||0;
       if(pop<=0) continue;
       if(b.h._starved) continue; // already not counting
-      if(b.h.building==='command_center') continue;
+      if(b.h.building===pHQ()) continue;
       b.h._starved=true; b.h._starveReason='overpop';
       used-=pop;
       log(`${b.def.name} at (${b.c},${b.r}) shut down — not enough workers.`,'bad');
@@ -1585,10 +1898,11 @@ function runProduction(){
 
 function recalcPopCap(){
   let cap=0;
+  const pb=pBLDG();
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
     const h=G.map[c][r];
     if(h.owner!=='player'||!h.building) continue;
-    const def=BLDG[h.building];
+    const def=pb[h.building];
     if(def&&def.popCap&&!h._starved) cap+=def.popCap;
   }
   G.popCap=cap;
@@ -1602,15 +1916,15 @@ function recheckEnergy(){
     let eProd=0, eCons=0;
     for(const key of cluster){
       const c=Math.floor(key/100), r=key%100;
-      const def=BLDG[G.map[c][r].building]; if(!def) continue;
+      const def=anyBldg(G.map[c][r].building); if(!def) continue;
       eProd+=effectiveEProd(G.map[c][r].building);
       eCons+=(def.cons.energy||0);
     }
-    const ok=eProd>=eCons;
+    const ok=isVoton()?true:(eProd>=eCons);
     for(const key of cluster){
       const c=Math.floor(key/100), r=key%100;
       const h=G.map[c][r];
-      const def=BLDG[h.building]; if(!def) continue;
+      const def=anyBldg(h.building); if(!def) continue;
       const needsEnergy=(def.cons.energy||0)>0;
       if(needsEnergy&&!ok){h._starved=true;h._starveReason='energy';}
       else if(h._starveReason==='energy'){h._starved=false;h._starveReason=null;}
@@ -1620,7 +1934,7 @@ function recheckEnergy(){
   for(const cluster of clusters){
     for(const key of cluster){
       const c=Math.floor(key/100), r=key%100;
-      const def=BLDG[G.map[c][r].building]; if(!def) continue;
+      const def=anyBldg(G.map[c][r].building); if(!def) continue;
       G.energySurplus+=effectiveEProd(G.map[c][r].building)-(def.cons.energy||0);
     }
   }
@@ -1632,10 +1946,11 @@ function recheckEnergy(){
 // ============================================================
 function popUsed(){
   let used=0;
+  const pb=pBLDG();
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
     const h=G.map[c][r];
     if(h.owner==='player'&&h.building){
-      const def=BLDG[h.building];
+      const def=pb[h.building];
       if(def) used+=(def.pop||0);
     }
   }
@@ -1649,8 +1964,10 @@ function isAdjPlayer(c,r){
 }
 
 function canBuildAt(key,c,r){
-  const def=BLDG[key];
+  const pb=pBLDG();
+  const def=pb[key];
   if(!def||def.canBuild===false) return false;
+  if(def.crystalReq&&crystalLevel()<def.crystalReq) return false;
   const h=G.map[c][r];
   if(h.building||(h.owner&&h.owner!=='player')) return false;
   if(def.needsTerrain&&h.terrain!==def.needsTerrain) return false;
@@ -1668,7 +1985,7 @@ function hasUpgrade(key){ return !!G.upgrades[key]; }
 
 function canResearch(key,labC,labR){
   if(hasUpgrade(key)) return false;
-  const u=UPGRADES[key]; if(!u) return false;
+  const u=pUPGRADES()[key]; if(!u) return false;
   if(!canGather(labC,labR,tileCost(u.cost))) return false;
   if(G.credits<creditCost(u.cost)) return false;
   return true;
@@ -1676,7 +1993,7 @@ function canResearch(key,labC,labR){
 
 function doResearch(key,labC,labR){
   if(!canResearch(key,labC,labR)) return;
-  const u=UPGRADES[key];
+  const u=pUPGRADES()[key];
   doGather(labC,labR,tileCost(u.cost));
   G.credits-=creditCost(u.cost);
   G.upgrades[key]=true;
@@ -1686,7 +2003,7 @@ function doResearch(key,labC,labR){
 }
 
 function applyUpgrade(key){
-  const u=UPGRADES[key];
+  const u=pUPGRADES()[key];
   if(u.effect==='ship_speed'){
     for(const s of G.ships) if(s.owner==='player') s.speed+=u.bonus;
   }
@@ -1696,10 +2013,14 @@ function applyUpgrade(key){
   if(u.effect==='ship_range'){
     for(const s of G.ships) if(s.owner==='player'&&s.combat>0) s.range+=u.bonus;
   }
+  if(u.effect==='ship_shields'){
+    for(const s of G.ships) if(s.owner==='player'&&s.shieldMax) s.shieldMax+=u.bonus;
+  }
   if(u.effect==='building_toughness'){
+    const pb=pBLDG();
     for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
       const h=G.map[c][r];
-      if(h.owner==='player'&&h.building&&BLDG[h.building]){
+      if(h.owner==='player'&&h.building&&pb[h.building]){
         h.maxHp+=u.bonusHp; h.hp+=u.bonusHp;
       }
     }
@@ -1709,14 +2030,14 @@ function applyUpgrade(key){
 
 function doBuild(key,c,r){
   if(!canBuildAt(key,c,r)) return;
-  const def=BLDG[key];
+  const def=pBLDG()[key];
   doGather(c,r,tileCost(def.cost));
   G.credits-=creditCost(def.cost);
   const h=G.map[c][r];
   h.building=key; h.owner='player'; h.hp=def.hp; h.maxHp=def.hp;
   // Apply ceramic plating upgrade to new buildings
-  if(hasUpgrade('ceramic_plating')){
-    const u=UPGRADES.ceramic_plating;
+  if(hasUpgrade('ceramic_plating')||hasUpgrade('crystal_lattice')){
+    const u=pUPGRADES().ceramic_plating||pUPGRADES().crystal_lattice;
     h.maxHp+=u.bonusHp; h.hp+=u.bonusHp;
   }
   h.stockpile=freshStock(); h._starved=false;
@@ -1727,8 +2048,8 @@ function doBuild(key,c,r){
 
 function doDemolish(c,r){
   const h=G.map[c][r];
-  if(!h.building||h.owner!=='player'||h.building==='command_center') return;
-  const def=BLDG[h.building];
+  if(!h.building||h.owner!=='player'||h.building===pHQ()) return;
+  const def=pBLDG()[h.building]||BLDG[h.building];
   const name=def?def.name:h.building;
   // Refund 50% to adjacent stockpiles (tile res) and credits bank
   if(def){
@@ -1739,7 +2060,7 @@ function doDemolish(c,r){
   }
   // Transfer remaining stockpile to adjacent
   const adjs=adjSources(c,r).filter(t=>t!==h);
-  if(adjs.length>0) for(const res of TILE_RES){adjs[0].stockpile[res]+=(h.stockpile[res]||0);}
+  if(adjs.length>0) for(const res of pTileRes()){adjs[0].stockpile[res]+=(h.stockpile[res]||0);}
   h.building=null; h.owner=null; h.hp=0; h.maxHp=0;
   h.stockpile=freshStock(); h._starved=false;
   log(`Demolished ${name}. 50% refunded.`,'info');
@@ -1751,9 +2072,9 @@ function doDemolish(c,r){
 // ============================================================
 function relayPull(rc,rr,sc,sr){
   const relay=G.map[rc][rr];
-  if(relay.building!=='relay'||relay._relayUsed) return;
+  if((relay.building!=='relay'&&relay.building!=='teleporter')||relay._relayUsed) return;
   const src=G.map[sc][sr];
-  for(const res of TILE_RES){
+  for(const res of pTileRes()){
     const amt=src.stockpile[res]||0;
     if(amt>0){relay.stockpile[res]=(relay.stockpile[res]||0)+amt;src.stockpile[res]=0;}
   }
@@ -1765,9 +2086,9 @@ function relayPull(rc,rr,sc,sr){
 
 function relayPush(rc,rr,tc,tr){
   const relay=G.map[rc][rr];
-  if(relay.building!=='relay'||relay._relayUsed) return;
+  if((relay.building!=='relay'&&relay.building!=='teleporter')||relay._relayUsed) return;
   const tgt=G.map[tc][tr];
-  for(const res of TILE_RES){
+  for(const res of pTileRes()){
     const amt=relay.stockpile[res]||0;
     if(amt>0){tgt.stockpile[res]=(tgt.stockpile[res]||0)+amt;relay.stockpile[res]=0;}
   }
@@ -1780,7 +2101,7 @@ function relayPush(rc,rr,tc,tr){
 function resetRelays(){
   const maxUses=hasUpgrade('relay_amplifier')?2:1;
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++)
-    if(G.map[c][r].building==='relay'){G.map[c][r]._relayUsed=false;G.map[c][r]._relayUsesLeft=maxUses;}
+    if(G.map[c][r].building==='relay'||G.map[c][r].building==='teleporter'){G.map[c][r]._relayUsed=false;G.map[c][r]._relayUsesLeft=maxUses;}
 }
 
 // ============================================================
@@ -1819,18 +2140,21 @@ function doTrade(c,r,dealIdx){
 // SHIPS
 // ============================================================
 function spawnShip(type,owner,c,r){
-  const def=SHIPS[type];
+  const def=SHIPS[type]||VOTON_SHIPS[type];
   const ship={id:nextShipId++,type,owner,col:c,row:r,
     hp:def.hp,maxHp:def.hp,combat:def.combat,speed:def.speed,
     range:def.range||1, armor:def.armor||0,
+    shieldMax:def.shieldMax||0, shield:def.shieldMax||0,
     cargoMax:def.cargo, cargo:freshStock(), movesLeft:0, hasAttacked:false, attacksLeft:def.attacks||1,
     path:[], pathLoop:false, pathIdx:0, pathDir:1, pathOrigin:null, facing:-Math.PI/2, autofire:false};
   // Apply upgrades to player ships
   if(owner==='player'){
-    if(hasUpgrade('plasma_thrusters')) ship.speed+=UPGRADES.plasma_thrusters.bonus;
-    if(hasUpgrade('reinforced_hulls')){ship.maxHp+=UPGRADES.reinforced_hulls.bonus;ship.hp+=UPGRADES.reinforced_hulls.bonus;}
-    if(hasUpgrade('extended_sensors')&&ship.combat>0) ship.range+=UPGRADES.extended_sensors.bonus;
-    if(hasUpgrade('ready_deployment')){ship.movesLeft=ship.speed;ship.hasAttacked=false;ship.attacksLeft=def.attacks||1;}
+    const pu=pUPGRADES();
+    if(hasUpgrade('plasma_thrusters')||hasUpgrade('crystal_drives')){ const u=pu.plasma_thrusters||pu.crystal_drives; ship.speed+=u.bonus; }
+    if(hasUpgrade('reinforced_hulls')){ const u=pu.reinforced_hulls; ship.maxHp+=u.bonus;ship.hp+=u.bonus; }
+    if(hasUpgrade('extended_sensors')&&ship.combat>0){ const u=pu.extended_sensors; ship.range+=u.bonus; }
+    if(hasUpgrade('resonant_shields')&&ship.shieldMax>0){ ship.shieldMax+=pu.resonant_shields.bonus; ship.shield=ship.shieldMax; }
+    if(hasUpgrade('ready_deployment')||hasUpgrade('instant_deployment')){ship.movesLeft=ship.speed;ship.hasAttacked=false;ship.attacksLeft=def.attacks||1;}
   }
   G.ships.push(ship);
   return ship;
@@ -1839,8 +2163,10 @@ function spawnShip(type,owner,c,r){
 function buildShip(type){
   if(!selectedHex) return;
   const h=G.map[selectedHex.col][selectedHex.row];
-  if(h.building!=='spaceport'||h.owner!=='player') return;
-  const def=SHIPS[type];
+  if((h.building!=='spaceport'&&h.building!=='voton_spaceport')||h.owner!=='player') return;
+  const def=pSHIPS()[type];
+  if(!def) return;
+  if(def.crystalReq&&crystalLevel()<def.crystalReq){log('Need Crystal Level '+def.crystalReq+' for '+def.name+'.','bad');return;}
   const tc=tileCost(def.cost);
   const cc=creditCost(def.cost);
   if(!canGather(selectedHex.col,selectedHex.row,tc)||G.credits<cc){log("Not enough resources for "+def.name+".","bad");return;}
@@ -1853,13 +2179,13 @@ function buildShip(type){
   tutorialCheck();
 }
 
-function repairCost(ship){return Math.ceil((SHIPS[ship.type].cost.minerals||1)/3);}
+function repairCost(ship){return Math.ceil(((SHIPS[ship.type]||VOTON_SHIPS[ship.type]||{cost:{}}).cost.minerals||1)/3);}
 function repairAmt(ship){return Math.ceil(ship.maxHp/3);}
 function canRepairShip(ship){
   if(ship.hp>=ship.maxHp) return false;
   if(ship.movesLeft<=0&&ship.hasAttacked) return false;
   const hex=G.map[ship.col][ship.row];
-  const onYard=hex.building==='spaceport'&&(hex.owner==='player'||isRivalOwner(hex.owner));
+  const onYard=(hex.building==='spaceport'||hex.building==='voton_spaceport')&&(hex.owner==='player'||isRivalOwner(hex.owner));
   if(!onYard||hex.owner!==ship.owner) return false;
   // Check minerals available adjacent
   const cost=repairCost(ship);
@@ -1874,11 +2200,11 @@ function doRepairShip(id){
   const heal=Math.min(repairAmt(ship),ship.maxHp-ship.hp);
   ship.hp+=heal;
   ship.movesLeft=0; ship.hasAttacked=true; ship.attacksLeft=0;
-  log(`${SHIPS[ship.type].name} repaired +${heal} HP (cost: ${cost} minerals).`,'info');
+  log(`${shipDef(ship).name} repaired +${heal} HP (cost: ${cost} minerals).`,'info');
   updateAll();
 }
 
-function shipTotal(s){let t=0;for(const r of TILE_RES)t+=(s.cargo[r]||0);return t;}
+function shipTotal(s){let t=0;for(const r of pTileRes())t+=(s.cargo[r]||0);return t;}
 function shipSpace(s){return s.cargoMax-shipTotal(s);}
 function shipById(id){return G.ships.find(s=>s.id===id);}
 function shipsAt(c,r,owner){return G.ships.filter(s=>s.col===c&&s.row===r&&s.hp>0&&(!owner||s.owner===owner));}
@@ -1933,7 +2259,7 @@ function doLoad(sid,res){
   const amt=Math.min(avail,space);
   if(amt<=0) return;
   h.stockpile[res]-=amt; ship.cargo[res]+=amt;
-  log(`Loaded ${amt} ${res} onto ${SHIPS[ship.type].name}.`,'info');
+  log(`Loaded ${amt} ${res} onto ${shipDef(ship).name}.`,'info');
   updateAll();
   tutorialCheck();
 }
@@ -1944,14 +2270,20 @@ function doUnload(sid,res){
   const h=G.map[ship.col][ship.row];
   h.stockpile[res]=(h.stockpile[res]||0)+amt;
   ship.cargo[res]=0;
-  log(`Unloaded ${amt} ${res} from ${SHIPS[ship.type].name}.`,'info');
+  log(`Unloaded ${amt} ${res} from ${shipDef(ship).name}.`,'info');
   updateAll();
   tutorialCheck();
 }
 
 function resetShips(){
-  const spdBonus=hasUpgrade('plasma_thrusters')?UPGRADES.plasma_thrusters.bonus:0;
-  for(const s of G.ships) if(s.owner==='player'){s.movesLeft=SHIPS[s.type].speed+spdBonus;s.hasAttacked=false;s.attacksLeft=SHIPS[s.type].attacks||1;}
+  const pu=pUPGRADES();
+  const spdBonus=(hasUpgrade('plasma_thrusters')||hasUpgrade('crystal_drives'))?(pu.plasma_thrusters||pu.crystal_drives).bonus:0;
+  for(const s of G.ships) if(s.owner==='player'){
+    const sd=shipDef(s);
+    s.movesLeft=sd.speed+spdBonus;s.hasAttacked=false;s.attacksLeft=sd.attacks||1;
+    // Shield recharge
+    if(s.shieldMax>0) s.shield=s.shieldMax;
+  }
 }
 
 function followPaths(){
@@ -2048,7 +2380,7 @@ function doPathCargo(ship){
         traded=true;
       }
     }
-    if(traded) log(`${SHIPS[ship.type].name} auto-traded at ${tpDef.name}.`,'info');
+    if(traded) log(`${shipDef(ship).name} auto-traded at ${tpDef.name}.`,'info');
     return;
   }
 
@@ -2056,19 +2388,19 @@ function doPathCargo(ship){
   const total=shipTotal(ship);
   if(total>0){
     // Unload
-    for(const res of TILE_RES){
+    for(const res of pTileRes()){
       const amt=ship.cargo[res]||0;
       if(amt>0){hex.stockpile[res]=(hex.stockpile[res]||0)+amt;ship.cargo[res]=0;}
     }
-    log(`${SHIPS[ship.type].name} auto-unloaded at ${(BLDG[hex.building]||EBLDG[hex.building]||{}).name||hex.building}.`,'info');
+    log(`${shipDef(ship).name} auto-unloaded at ${(anyBldg(hex.building)||{}).name||hex.building}.`,'info');
   } else {
     // Load
-    for(const res of TILE_RES){
+    for(const res of pTileRes()){
       const avail=hex.stockpile[res]||0, space=shipSpace(ship);
       const amt=Math.min(avail,space);
       if(amt>0){hex.stockpile[res]-=amt;ship.cargo[res]+=amt;}
     }
-    if(shipTotal(ship)>0) log(`${SHIPS[ship.type].name} auto-loaded at ${(BLDG[hex.building]||EBLDG[hex.building]||{}).name||hex.building}.`,'info');
+    if(shipTotal(ship)>0) log(`${shipDef(ship).name} auto-loaded at ${(anyBldg(hex.building)||{}).name||hex.building}.`,'info');
   }
 }
 
@@ -2087,12 +2419,21 @@ function getReachable(ship){
 // ============================================================
 function calcDmg(combat,armor){return Math.max(1,combat-(armor||0));}
 
+function applyDmgToShip(ship, dmg){
+  if(ship.shield>0){
+    const absorbed=Math.min(ship.shield, dmg);
+    ship.shield-=absorbed;
+    dmg-=absorbed;
+  }
+  ship.hp-=dmg;
+}
+
 function resolveCombat(atk,def,dist){
-  const an=SHIPS[atk.type]?.name||atk.type, dn=SHIPS[def.type]?.name||def.type;
+  const an=shipDef(atk)?.name||atk.type, dn=shipDef(def)?.name||def.type;
   const atkRange=atk.range||1, defRange=def.range||1;
   dist=dist||hexDist(atk.col,atk.row,def.col,def.row)||1;
   const dmgToDef=calcDmg(atk.combat,def.armor||0);
-  def.hp-=dmgToDef;
+  applyDmgToShip(def, dmgToDef);
   // Beam from attacker to defender
   const atkColor=ownerColor(atk.owner);
   queueBeam(atk.col,atk.row,def.col,def.row,dmgToDef,atkColor);
@@ -2101,15 +2442,15 @@ function resolveCombat(atk,def,dist){
   // Defender retaliates only if in melee range (dist<=1) or defender has range >= dist
   if((def.combat||0)>0&&defRange>=dist){
     const dmgToAtk=calcDmg(def.combat,atk.armor||0);
-    atk.hp-=dmgToAtk;
+    applyDmgToShip(atk, dmgToAtk);
     // Retaliation beam
     const defColor=ownerColor(def.owner);
     queueBeam(def.col,def.row,atk.col,atk.row,dmgToAtk,defColor);
     log(`${dn} retaliates for ${dmgToAtk}!`,'combat');
   }
 
-  if(def.hp<=0){log(`${dn} (${G.factions[def.owner]||def.owner}) destroyed!`,atk.owner==='player'?'good':'bad');removeShip(def);}
-  if(atk.hp<=0){log(`${an} (${G.factions[atk.owner]||atk.owner}) destroyed!`,atk.owner==='player'?'bad':'good');removeShip(atk);}
+  if(def.hp<=0){log(`${dn} (${G.factions[def.owner]||def.owner}) destroyed!`,atk.owner==='player'?'good':'bad');if(atk.owner==='player'&&(def.owner==='pirate'||def.owner==='pirates2'))G._pirateShipsDestroyed=(G._pirateShipsDestroyed||0)+1;removeShip(def);}
+  if(atk.hp<=0){log(`${an} (${G.factions[atk.owner]||atk.owner}) destroyed!`,atk.owner==='player'?'bad':'good');if(def.owner==='player'&&(atk.owner==='pirate'||atk.owner==='pirates2'))G._pirateShipsDestroyed=(G._pirateShipsDestroyed||0)+1;removeShip(atk);}
 }
 
 function removeShip(s){
@@ -2124,7 +2465,7 @@ function doAttackBldg(sid,tc,tr){
   if(!h.building||!isHostile(ship.owner,h.owner)) return;
   const dist=hexDist(ship.col,ship.row,tc,tr);
   if(dist>(ship.range||1)) return;
-  const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building]; if(!bd) return;
+  const bd=anyBldg(h.building); if(!bd) return;
 
   ship.attacksLeft=(ship.attacksLeft||1)-1;
   if(ship.attacksLeft<=0) ship.hasAttacked=true;
@@ -2133,18 +2474,18 @@ function doAttackBldg(sid,tc,tr){
   // Beam from ship to building
   const shipColor=ownerColor(ship.owner);
   queueBeam(ship.col,ship.row,tc,tr,dmg,shipColor);
-  log(`${SHIPS[ship.type].name} attacks ${bd.name} for ${dmg} dmg${dist>1?' at range '+dist:''}!`,'combat');
+  log(`${shipDef(ship).name} attacks ${bd.name} for ${dmg} dmg${dist>1?' at range '+dist:''}!`,'combat');
 
   // Building retaliates only if ship is within building's range
   const bldgRange=bd.range||1;
   if((bd.combat||0)>0&&bldgRange>=dist){
     const retDmg=calcDmg(bd.combat,ship.armor||0);
-    ship.hp-=retDmg;
+    applyDmgToShip(ship, retDmg);
     // Retaliation beam from building
     const bldgColor=ownerColor(h.owner);
     queueBeam(tc,tr,ship.col,ship.row,retDmg,bldgColor);
     log(`${bd.name} retaliates for ${retDmg}!`,'combat');
-    if(ship.hp<=0){log(`${SHIPS[ship.type].name} destroyed!`,'bad');removeShip(ship);}
+    if(ship.hp<=0){log(`${shipDef(ship).name} destroyed!`,'bad');removeShip(ship);}
   }
 
   if(h.hp<=0){
@@ -2155,7 +2496,7 @@ function doAttackBldg(sid,tc,tr){
     recheckEnergy();
     if(was==='pirate_base') log(`${G.factions.pirate} base destroyed!`,'good');
     if(was==='command_center'&&isRivalOwner(wasOwner)) log(`${G.factions[wasOwner]} HQ conquered!`,'good');
-    if(was==='command_center'&&wasOwner==='player') log('Your Command Center has been destroyed!','bad');
+    if((was==='command_center'||was==='voton_nexus')&&wasOwner==='player') log(`Your ${(anyBldg(was)||{}).name||'HQ'} has been destroyed!`,'bad');
     checkEnd();
   }
   updateAll();
@@ -2237,10 +2578,9 @@ function turretFire(){
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
     const h=G.map[c][r];
     if(!h.building||!h.owner) continue;
-    const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building];
+    const bd=anyBldg(h.building);
     if(!bd||(bd.combat||0)===0) continue;
-    if(!h.building.includes('turret')&&h.building!=='defense_turret'&&h.building!=='missile_battery') continue;
-    // Starved turrets don't fire
+    if(!h.building.includes('turret')&&h.building!=='defense_turret'&&h.building!=='missile_battery'&&h.building!=='voton_artillery') continue;
     if(h._starved) continue;
     const range=bd.range||1;
     const targets=[];
@@ -2251,14 +2591,14 @@ function turretFire(){
     for(const t of targets){
       if(t.hp<=0) continue;
       let combat=bd.combat||0;
-      if(h.owner==='player'&&hasUpgrade('advanced_targeting')) combat+=UPGRADES.advanced_targeting.bonus;
+      if(h.owner==='player'&&(hasUpgrade('advanced_targeting')||hasUpgrade('focused_prisms'))){ const u=pUPGRADES().advanced_targeting||pUPGRADES().focused_prisms; combat+=u.bonus; }
       const dmg=calcDmg(combat,t.armor||0);
-      t.hp-=dmg;
+      applyDmgToShip(t, dmg);
       // Turret beam
       const turColor=ownerColor(h.owner);
       queueBeam(c,r,t.col,t.row,dmg,turColor);
-      log(`${bd.name} (${c},${r}) fires on ${SHIPS[t.type]?.name}! ${dmg} dmg.`,'combat');
-      if(t.hp<=0){log(`${SHIPS[t.type]?.name} (${G.factions[t.owner]||t.owner}) destroyed by turret!`,t.owner==='player'?'bad':'good');removeShip(t);}
+      log(`${bd.name} (${c},${r}) fires on ${shipDef(t)?.name}! ${dmg} dmg.`,'combat');
+      if(t.hp<=0){log(`${shipDef(t)?.name} (${G.factions[t.owner]||t.owner}) destroyed by turret!`,t.owner==='player'?'bad':'good');removeShip(t);}
     }
   }
 }
@@ -2271,23 +2611,23 @@ function turretFireAt(ship){
     const h=G.map[c][r];
     if(!h.building||!h.owner) continue;
     if(!isHostile(h.owner,ship.owner)) continue;
-    const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building];
+    const bd=anyBldg(h.building);
     if(!bd||(bd.combat||0)===0) continue;
-    if(!h.building.includes('turret')&&h.building!=='defense_turret'&&h.building!=='missile_battery') continue;
+    if(!h.building.includes('turret')&&h.building!=='defense_turret'&&h.building!=='missile_battery'&&h.building!=='voton_artillery') continue;
     if(h._starved) continue;
     if(h._turretFiredThisTurn) continue;
     const range=bd.range||1;
     const dist=hexDist(c,r,ship.col,ship.row);
     if(dist>range) continue;
     let combat=bd.combat||0;
-    if(h.owner==='player'&&hasUpgrade('advanced_targeting')) combat+=UPGRADES.advanced_targeting.bonus;
+    if(h.owner==='player'&&(hasUpgrade('advanced_targeting')||hasUpgrade('focused_prisms'))){ const u=pUPGRADES().advanced_targeting||pUPGRADES().focused_prisms; combat+=u.bonus; }
     const dmg=calcDmg(combat,ship.armor||0);
-    ship.hp-=dmg;
+    applyDmgToShip(ship, dmg);
     const turColor=ownerColor(h.owner);
     queueBeam(c,r,ship.col,ship.row,dmg,turColor);
-    log(`${bd.name} (${c},${r}) fires on ${SHIPS[ship.type]?.name}! ${dmg} dmg.`,'combat');
+    log(`${bd.name} (${c},${r}) fires on ${shipDef(ship)?.name}! ${dmg} dmg.`,'combat');
     h._turretFiredThisTurn=true;
-    if(ship.hp<=0){log(`${SHIPS[ship.type]?.name} (${G.factions[ship.owner]||ship.owner}) destroyed by turret!`,ship.owner==='player'?'bad':'good');removeShip(ship);return;}
+    if(ship.hp<=0){log(`${shipDef(ship)?.name} (${G.factions[ship.owner]||ship.owner}) destroyed by turret!`,ship.owner==='player'?'bad':'good');removeShip(ship);return;}
   }
 }
 
@@ -2335,7 +2675,7 @@ function pirateMove(){
   const es=G.ships.filter(s=>s.owner==='pirate');
   for(const ship of [...es]){
     if(ship.hp<=0) continue;
-    ship.movesLeft=SHIPS[ship.type].speed; ship.hasAttacked=false; ship.attacksLeft=SHIPS[ship.type].attacks||1;
+    ship.movesLeft=shipDef(ship).speed; ship.hasAttacked=false; ship.attacksLeft=shipDef(ship).attacks||1;
     let nd=Infinity, tgt=null;
     for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
       if(G.map[c][r].owner==='player'&&G.map[c][r].building){
@@ -2659,7 +2999,7 @@ function rivalScoreSite(c,r,bldgKey,rOwner){
   // For turrets: prefer sites toward the player (defensive frontier)
   if(bldgKey==='defense_turret'){
     const hq=findBldg('command_center',rOwner);
-    const cc=findBldg('command_center','player');
+    const cc=findBldg(pHQ(),'player');
     if(hq&&cc){
       const distToPlayer=hexDist(c,r,cc.col,cc.row);
       const hqToPlayer=hexDist(hq.col,hq.row,cc.col,cc.row);
@@ -2788,7 +3128,7 @@ function rivalTransportAI(rOwner){
   const claimed=new Set();
 
   for(const ship of transports){
-    ship.movesLeft=SHIPS[ship.type].speed;
+    ship.movesLeft=shipDef(ship).speed;
     const total=shipTotal(ship);
     let target=null, targetScore=-Infinity, targetReason='';
 
@@ -2997,9 +3337,9 @@ function rivalCombatAI(rOwner){
   if(combatShips.length===0) return;
 
   for(const ship of combatShips){
-    ship.movesLeft=SHIPS[ship.type].speed;
+    ship.movesLeft=shipDef(ship).speed;
     ship.hasAttacked=false;
-    ship.attacksLeft=SHIPS[ship.type].attacks||1;
+    ship.attacksLeft=shipDef(ship).attacks||1;
   }
 
   const playerShips=G.ships.filter(s=>s.owner==='player'&&s.hp>0);
@@ -3084,7 +3424,7 @@ function rivalCombatAI(rOwner){
 
     for(const ship of squad){
       if(ship.hp<=0) continue;
-      const maxHp=ship.maxHp||SHIPS[ship.type].hp;
+      const maxHp=ship.maxHp||shipDef(ship).hp;
       const range=ship.range||1;
 
       if(ship.hp<=maxHp*0.25){
@@ -3097,7 +3437,7 @@ function rivalCombatAI(rOwner){
               const heal=Math.min(repairAmt(ship),ship.maxHp-ship.hp);
               ship.hp+=heal;
               ship.movesLeft=0;ship.hasAttacked=true;ship.attacksLeft=0;
-              log(`${G.factions[rOwner]} ${SHIPS[ship.type].name} repaired +${heal} HP.`,'bad');
+              log(`${G.factions[rOwner]} ${shipDef(ship).name} repaired +${heal} HP.`,'bad');
               continue;
             }
           }
@@ -3153,7 +3493,7 @@ function rivalCombatAI(rOwner){
         for(const pos of inRange){
           const hx=G.map[pos.col][pos.row];
           if(hx.owner==='player'&&hx.building&&hx.building!=='ruins'){
-            const bd=BLDG[hx.building]||EBLDG[hx.building]||TRADE_POSTS[hx.building];
+            const bd=anyBldg(hx.building);
             if(!bd) continue;
             const dist=hexDist(ship.col,ship.row,pos.col,pos.row);
             const dmg=calcDmg(ship.combat,(bd.armor||0)+(hasUpgrade('ceramic_plating')?UPGRADES.ceramic_plating.bonusArmor:0));
@@ -3193,29 +3533,29 @@ function rivalCombatAI(rOwner){
 
 function atkBldgAI(ship,tc,tr){
   const h=G.map[tc][tr];
-  const bd=BLDG[h.building]||EBLDG[h.building]||TRADE_POSTS[h.building]; if(!bd) return;
+  const bd=anyBldg(h.building); if(!bd) return;
   const dist=hexDist(ship.col,ship.row,tc,tr);
   ship.attacksLeft=(ship.attacksLeft||1)-1;
   if(ship.attacksLeft<=0) ship.hasAttacked=true;
   let bArmor=bd.armor||0;
-  if(h.owner==='player'&&hasUpgrade('ceramic_plating')) bArmor+=UPGRADES.ceramic_plating.bonusArmor;
+  if(h.owner==='player'&&(hasUpgrade('ceramic_plating')||hasUpgrade('crystal_lattice'))){ const pu=pUPGRADES(); const u=pu.ceramic_plating||pu.crystal_lattice; bArmor+=u.bonusArmor; }
   const dmg=calcDmg(ship.combat,bArmor);
   h.hp-=dmg;
-  log(`Enemy ${SHIPS[ship.type].name} attacks your ${bd.name} for ${dmg} dmg${dist>1?' at range '+dist:''}!`,'bad');
+  log(`Enemy ${shipDef(ship).name} attacks your ${bd.name} for ${dmg} dmg${dist>1?' at range '+dist:''}!`,'bad');
   const bldgRange=bd.range||1;
   if((bd.combat||0)>0&&bldgRange>=dist){
     let retCombat=bd.combat||0;
-    if(h.owner==='player'&&hasUpgrade('advanced_targeting')) retCombat+=UPGRADES.advanced_targeting.bonus;
+    if(h.owner==='player'&&(hasUpgrade('advanced_targeting')||hasUpgrade('focused_prisms'))){ const pu=pUPGRADES(); const u=pu.advanced_targeting||pu.focused_prisms; retCombat+=u.bonus; }
     const retDmg=calcDmg(retCombat,ship.armor||0);
-    ship.hp-=retDmg;
-    if(ship.hp<=0){log(`Enemy ${SHIPS[ship.type].name} destroyed by ${bd.name}!`,'good');removeShip(ship);}
+    applyDmgToShip(ship, retDmg);
+    if(ship.hp<=0){log(`Enemy ${shipDef(ship).name} destroyed by ${bd.name}!`,'good');removeShip(ship);}
   }
   if(h.hp<=0){
     log(`Your ${bd.name} at (${tc},${tr}) was destroyed!`,'bad');
     const was=h.building;
     h.building=null; h.owner=null; h.hp=0; h.maxHp=0; h.stockpile=freshStock();
     recheckEnergy();
-    if(was==='command_center') checkEnd();
+    if(was===pHQ()) checkEnd();
   }
 }
 
@@ -3243,7 +3583,7 @@ function endTurn(){
 
 function checkEnd(){
   if(G.gameOver) return;
-  if(!findBldg('command_center','player')){gameEnd(false,'Your Command Center was destroyed!');return;}
+  if(!findBldg(pHQ(),'player')){gameEnd(false,'Your '+pBLDG()[pHQ()].name+' was destroyed!');return;}
   const lvl=LEVELS[G.level]||LEVELS.frontier;
   const piratesGone=!lvl.pirates||!findBldg('pirate_base','pirate');
   const rivalsGone=getRivals().every(r=>!findBldg('command_center',r));
@@ -3275,7 +3615,7 @@ function randomEvt(){
       }
     },
     ()=>{
-      const cc=findBldg('command_center','player');
+      const cc=findBldg(pHQ(),'player');
       if(cc){const a=3+Math.floor(Math.random()*5);G.map[cc.col][cc.row].stockpile.minerals+=a;log(`Salvage drones found ${a} minerals!`,'good');}
     },
     ()=>{
@@ -3337,6 +3677,33 @@ function drawShipShape(ctx,type,x,y,col){
     ctx.beginPath();ctx.moveTo(x-u*1.8,y-u*3);ctx.lineTo(x-u*2.5,y-u*2);ctx.lineTo(x-u*1,y-u*2);ctx.closePath();ctx.fill();
     ctx.beginPath();ctx.moveTo(x+u*1.8,y-u*3);ctx.lineTo(x+u,y-u*2);ctx.lineTo(x+u*2.5,y-u*2);ctx.closePath();ctx.fill();
     ctx.fillRect(x-u*1,y+u*1.5,u*2,u);
+  } else if(type==='drone'){
+    // Small diamond
+    ctx.beginPath();ctx.moveTo(x,y-s*1.5);ctx.lineTo(x+s,y);ctx.lineTo(x,y+s*1.5);ctx.lineTo(x-s,y);ctx.closePath();ctx.fill();
+  } else if(type==='crystal_barge'){
+    // Wide hexagon shape
+    const u=s*1.2;
+    ctx.beginPath();ctx.moveTo(x,y-u*1.5);ctx.lineTo(x+u*1.5,y-u*0.5);ctx.lineTo(x+u*1.5,y+u*0.5);ctx.lineTo(x,y+u*1.5);ctx.lineTo(x-u*1.5,y+u*0.5);ctx.lineTo(x-u*1.5,y-u*0.5);ctx.closePath();ctx.fill();
+  } else if(type==='shard'){
+    // Sharp crystal shard — narrow elongated diamond
+    ctx.beginPath();ctx.moveTo(x,y-s*2.5);ctx.lineTo(x+s*0.7,y);ctx.lineTo(x,y+s*1.5);ctx.lineTo(x-s*0.7,y);ctx.closePath();ctx.fill();
+  } else if(type==='prism_cruiser'){
+    // Double triangle (hourglass)
+    ctx.beginPath();ctx.moveTo(x,y-s*2);ctx.lineTo(x+s*1.5,y);ctx.lineTo(x,y+s*2);ctx.lineTo(x-s*1.5,y);ctx.closePath();ctx.fill();
+    ctx.fillRect(x-s*0.3,y-s*0.3,s*0.6,s*0.6);
+  } else if(type==='void_lancer'){
+    // Long spear shape
+    const u=s*0.8;
+    ctx.beginPath();ctx.moveTo(x,y-u*4);ctx.lineTo(x+u,y-u);ctx.lineTo(x+u*0.6,y+u*2);ctx.lineTo(x-u*0.6,y+u*2);ctx.lineTo(x-u,y-u);ctx.closePath();ctx.fill();
+  } else if(type==='crystal_clipper'){
+    // Sleek swept-wing crystal shape
+    ctx.beginPath();ctx.moveTo(x,y-s*2);ctx.lineTo(x+s*2,y);ctx.lineTo(x+s*0.5,y+s*1.5);ctx.lineTo(x-s*0.5,y+s*1.5);ctx.lineTo(x-s*2,y);ctx.closePath();ctx.fill();
+  } else if(type==='monolith'){
+    // Large imposing rectangle with prongs
+    const u=s*1;
+    ctx.fillRect(x-u*1.5,y-u*2,u*3,u*4);
+    ctx.beginPath();ctx.moveTo(x-u*1.5,y-u*3);ctx.lineTo(x-u*2.5,y-u*1);ctx.lineTo(x-u*1.5,y-u*1);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x+u*1.5,y-u*3);ctx.lineTo(x+u*2.5,y-u*1);ctx.lineTo(x+u*1.5,y-u*1);ctx.closePath();ctx.fill();
   } else {
     // Fallback: simple triangle
     ctx.beginPath();ctx.moveTo(x,y-s*2);ctx.lineTo(x-s,y+s);ctx.lineTo(x+s,y+s);ctx.closePath();ctx.fill();
@@ -3449,7 +3816,7 @@ function render(){
 
     // Building symbol
     if(hex.building){
-      const bd=BLDG[hex.building]||EBLDG[hex.building]||TRADE_POSTS[hex.building];
+      const bd=anyBldg(hex.building);
       if(bd){
         let col2='#888';
         if(hex.owner==='player') col2=hex._starved?'#cccc00':'#00ee88';
@@ -3458,7 +3825,7 @@ function render(){
         if(hex.owner==='neutral') col2='#aaaacc';
         if(hex.building==='ruins') col2='#444';
         // Relay: dim if already used this turn
-        if(hex.building==='relay'&&hex.owner==='player'&&hex._relayUsed) col2='#447755';
+        if((hex.building==='relay'||hex.building==='teleporter')&&hex.owner==='player'&&hex._relayUsed) col2='#447755';
         ctx.fillStyle=col2;ctx.textAlign='center';ctx.textBaseline='middle';
         drawHexLabel(ctx,bd.name,p.x,p.y-2*cam.zoom,CFG.HEX*1.6*cam.zoom);
 
@@ -3477,7 +3844,7 @@ function render(){
 
     // Resource icons with counts
     if(hex.owner==='player'&&hex.building&&hex.building!=='ruins'){
-      const present=TILE_RES.filter(r2=>(hex.stockpile[r2]||0)>0);
+      const present=pTileRes().filter(r2=>(hex.stockpile[r2]||0)>0);
       const isTutRes=tutCurrentStep()&&tutCurrentStep().tutResHL&&_tutHighlight.some(th=>th.col===c&&th.row===r);
       if(present.length>0){
         const z=cam.zoom;
@@ -3512,11 +3879,15 @@ function render(){
         groups[k].count++;
       }
       let idx=0;
+      const total=Object.values(groups).length;
       for(const g of Object.values(groups)){
         const z=cam.zoom;
+        // Grid layout: 2 columns to keep ships within the hex
+        const col2=total<=1?0:(idx%2)*16-8;
+        const row2=total<=2?0:(Math.floor(idx/2))*14-(Math.floor((total-1)/2))*7;
         // Hover bob: gentle sine wave offset per ship group
         const bob=Math.sin(animTime*2.2+g.firstId*1.7)*2.5*z;
-        const sx=p.x+10*z+idx*18*z, sy=p.y-14*z+bob;
+        const sx=p.x+10*z+col2*z, sy=p.y-14*z+bob+row2*z;
         let col3=ownerColorShort(g.owner);
         ctx.fillStyle=col3;
         // Rotate to face direction: sprites point up (-PI/2), so rotate by facing+PI/2
@@ -3745,12 +4116,12 @@ function render(){
     if(d<=1){
       if(relayDragFrom.isRelay){
         const th=G.map[relayDragTo.col]&&G.map[relayDragTo.col][relayDragTo.row];
-        valid=th&&th.owner==='player'&&th.building&&TILE_RES.some(r2=>(G.map[relayDragFrom.col][relayDragFrom.row].stockpile[r2]||0)>0);
+        valid=th&&th.owner==='player'&&th.building&&pTileRes().some(r2=>(G.map[relayDragFrom.col][relayDragFrom.row].stockpile[r2]||0)>0);
       } else {
         const th=G.map[relayDragTo.col]&&G.map[relayDragTo.col][relayDragTo.row];
         valid=(relayDragTo.col===relayDragFrom.relayCol&&relayDragTo.row===relayDragFrom.relayRow)||
-              (th&&th.building==='relay'&&th.owner==='player'&&!th._relayUsed);
-        if(valid) valid=TILE_RES.some(r2=>(G.map[relayDragFrom.col][relayDragFrom.row].stockpile[r2]||0)>0);
+              (th&&(th.building==='relay'||th.building==='teleporter')&&th.owner==='player'&&!th._relayUsed);
+        if(valid) valid=pTileRes().some(r2=>(G.map[relayDragFrom.col][relayDragFrom.row].stockpile[r2]||0)>0);
       }
     }
     const color=valid?'#22cc44':'#ff4444';
@@ -3789,7 +4160,7 @@ function render(){
     // Resource label at midpoint
     if(valid){
       const src=G.map[relayDragFrom.col][relayDragFrom.row];
-      const resStr=TILE_RES.filter(r2=>(src.stockpile[r2]||0)>0).map(r2=>`${src.stockpile[r2]}`).join('+');
+      const resStr=pTileRes().filter(r2=>(src.stockpile[r2]||0)>0).map(r2=>`${src.stockpile[r2]}`).join('+');
       ctx.font=`bold ${Math.round(10*z)}px monospace`;ctx.textAlign='center';ctx.textBaseline='bottom';
       ctx.fillStyle='#fff';ctx.globalAlpha=0.9;ctx.fillText(resStr,(fp.x+tp.x)/2,(fp.y+tp.y)/2-8*z);
     }
@@ -3947,18 +4318,33 @@ function render(){
       const rv=selShip.range||1;
       circles.push({cx:sx2,cy:sy2+3*z,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
     }
-    // 2) Selected hex building (only if no ship selected, to avoid double)
+    // 2) Selected hex building + ships (only if no ship selected, to avoid double)
     if(selectedHex&&!selShip){
       const sh=G.map[selectedHex.col][selectedHex.row];
       const hp2=h2p(selectedHex.col,selectedHex.row);
-      let rv=0;
-      if(sh.building&&sh.building!=='ruins'){
-        const bd=BLDG[sh.building]||EBLDG[sh.building]||TRADE_POSTS[sh.building];
-        if(bd&&(bd.combat||0)>0) rv=Math.max(rv,bd.range||1);
+      // Building range ring (centered on hex) — only hostile buildings
+      if(sh.building&&sh.building!=='ruins'&&sh.owner&&sh.owner!=='player'){
+        const bd=anyBldg(sh.building);
+        if(bd&&(bd.combat||0)>0){
+          const rv=bd.range||1;
+          circles.push({cx:hp2.x,cy:hp2.y,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
+        }
       }
-      const shipsHere=G.ships.filter(s=>s.col===selectedHex.col&&s.row===selectedHex.row&&s.hp>0&&s.combat>0);
-      for(const s of shipsHere) rv=Math.max(rv,s.range||1);
-      if(rv>0) circles.push({cx:hp2.x,cy:hp2.y,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
+      // Ship range rings (centered on ship sprite, not hex) — only hostile ships
+      const shipsHere=G.ships.filter(s=>s.col===selectedHex.col&&s.row===selectedHex.row&&s.hp>0&&s.combat>0&&s.owner!=='player');
+      for(const s of shipsHere){
+        const rv=s.range||1;
+        const anim=shipAnims.find(a=>a.shipId===s.id);
+        let sx3,sy3;
+        if(anim&&anim.t<1){
+          const et=1-Math.pow(1-anim.t,3);
+          const fa=h2p(anim.fromCol,anim.fromRow), ta=h2p(anim.toCol,anim.toRow);
+          sx3=fa.x+(ta.x-fa.x)*et+shipOfsX; sy3=fa.y+(ta.y-fa.y)*et+shipOfsY;
+        } else {
+          sx3=hp2.x+shipOfsX; sy3=hp2.y+shipOfsY+Math.sin(animTime*2.2+s.id*1.7)*2.5*z;
+        }
+        circles.push({cx:sx3,cy:sy3+3*z,r:(rv*CFG.HEX*1.5+CFG.HEX*0.6)*z});
+      }
     }
     // Draw all circles as one merged path (no overlap crosshatch)
     if(circles.length>0){
@@ -4029,14 +4415,16 @@ function calcIncome(){
     for(const key of cluster){
       const c=Math.floor(key/100), r=key%100;
       const h=G.map[c][r];
-      const def=BLDG[h.building]; if(!def) continue;
+      const def=anyBldg(h.building); if(!def) continue;
       if(!h._starved){
         for(const[res,amt] of Object.entries(def.prod||{})){
           if(res==='energy') prod[res]+=effectiveEProd(h.building);
-          else prod[res]+=amt;
+          else if(prod[res]!==undefined) prod[res]+=amt;
         }
       }
-      for(const[res,amt] of Object.entries(def.cons||{})) cons[res]+=amt;
+      for(const[res,amt] of Object.entries(def.cons||{})){
+        if(cons[res]!==undefined) cons[res]+=amt;
+      }
     }
   }
   const net=freshStock();
@@ -4049,18 +4437,40 @@ function updateTopBar(){
   const t=totalRes();
   const inc=calcIncome();
   document.getElementById('res-minerals').textContent=t.minerals;
-  // Energy: show net from income calc (live, not stale G.energySurplus)
-  const eNet=inc.energy;
-  const eEl=document.getElementById('res-energy');
-  eEl.textContent=eNet>=0?`+${eNet}`:`${eNet}`;
-  eEl.style.color=eNet>=0?'#4c4':'#c44';
+  // Crystal level slot (Voton) / Energy slot (Alliance)
+  const crystalSlot=document.querySelector('.res-crystal');
+  const energySlot=document.querySelector('.res-energy');
+  if(isVoton()){
+    if(crystalSlot){crystalSlot.style.display='';document.getElementById('res-crystal').textContent=crystalLevel();}
+    if(energySlot) energySlot.style.display='none';
+  } else {
+    if(crystalSlot) crystalSlot.style.display='none';
+    if(energySlot) energySlot.style.display='';
+    const eEl=document.getElementById('res-energy');
+    const eNet=inc.energy;
+    eEl.textContent=eNet>=0?`+${eNet}`:`${eNet}`;
+    eEl.style.color=eNet>=0?'#4c4':'#c44';
+  }
   document.getElementById('res-food').textContent=t.food;
   document.getElementById('res-stardust').textContent=t.stardust;
-  document.getElementById('res-credits').textContent=G.credits;
+  // Credits / Cores visibility
+  const creditsSlot=document.querySelector('.res-credits');
+  const coresSlot=document.querySelector('.res-cores');
+  if(isVoton()){
+    if(creditsSlot) creditsSlot.style.display='none';
+    if(coresSlot) coresSlot.style.display='';
+    document.getElementById('res-cores').textContent=t.cores||0;
+  } else {
+    if(creditsSlot) creditsSlot.style.display='';
+    if(coresSlot) coresSlot.style.display='none';
+    document.getElementById('res-credits').textContent=G.credits;
+  }
   for(const res of RES){
     const el=document.getElementById(`res-${res}-d`);
     if(!el) continue;
     if(res==='energy'){el.textContent='';continue;} // energy shown inline
+    if(res==='credits'&&isVoton()){el.textContent='';continue;}
+    if(res==='cores'&&!isVoton()){el.textContent='';continue;}
     const n=inc[res];
     if(n>0){el.textContent=`+${n}`;el.style.color='#4c4';}
     else if(n<0){el.textContent=`${n}`;el.style.color='#c44';}
@@ -4122,7 +4532,7 @@ function renderHexPanel(c,r){
   let h=`<div class="panel"><div class="panel-title">Hex (${c}, ${r}) — ${hex.terrain}</div><div class="panel-content">`;
 
   if(hex.building&&hex.building!=='ruins'){
-    const bd=BLDG[hex.building]||EBLDG[hex.building]||TRADE_POSTS[hex.building];
+    const bd=anyBldg(hex.building);
     const oc=ownerHexColor(hex.owner);
     const port=hexPortrait(c,r);
     if(port) h+=`<img src="${port}" alt="" style="display:block;width:132px;height:132px;margin:0 auto 10px auto;border-radius:50%;border:2px solid ${oc};object-fit:cover;">`;
@@ -4133,13 +4543,13 @@ function renderHexPanel(c,r){
     if(hex._starved&&hex.owner==='player'){
       const reason=hex._starveReason==='energy'?'insufficient energy in cluster':hex._starveReason==='overpop'?'not enough workers (pop over cap)':'not enough adjacent resources';
       const adj=sumAdj(c,r);
-      const adjStr=TILE_RES.map(r2=>`${RICON[r2]}${adj[r2]}`).join(' ');
+      const adjStr=pTileRes().map(r2=>`${RICON[r2]}${adj[r2]}`).join(' ');
       h+=`<div style="color:#ff4444;font-weight:bold;">⚠ STARVED — ${reason}</div>`;
       h+=`<div style="color:#aa6644;font-size:11px;">Adjacent available: ${adjStr}</div>`;
     }
 
-    if(hex.owner==='player'&&BLDG[hex.building]){
-      const d=BLDG[hex.building];
+    if(hex.owner==='player'&&anyBldg(hex.building)){
+      const d=anyBldg(hex.building);
       if(d.prod&&Object.keys(d.prod).length>0) h+=`<div style="color:#4c4;font-size:12px;">Produces: ${Object.entries(d.prod).map(([r2,a])=>`<span style="color:${RCOL[r2]}">+${a}${RICON[r2]}</span>`).join(' ')}</div>`;
       if(d.cons&&Object.keys(d.cons).length>0) h+=`<div style="color:#c44;font-size:12px;">Consumes: ${Object.entries(d.cons).map(([r2,a])=>`<span style="color:${RCOL[r2]}">-${a}${RICON[r2]}</span>`).join(' ')}</div>`;
     }
@@ -4147,7 +4557,7 @@ function renderHexPanel(c,r){
     if(hex.owner==='player'){
       h+=`<div style="margin-top:4px;font-size:12px;color:#aaa;">Stockpile:</div>`;
       let any=false;
-      for(const res of TILE_RES){const a=hex.stockpile[res]||0;if(a>0){h+=`<div class="stockpile-row"><span style="color:${RCOL[res]}">${RICON[res]} ${res}: ${a}</span></div>`;any=true;}}
+      for(const res of pTileRes()){const a=hex.stockpile[res]||0;if(a>0){h+=`<div class="stockpile-row"><span style="color:${RCOL[res]}">${RICON[res]} ${res}: ${a}</span></div>`;any=true;}}
       if(!any) h+=`<div style="color:#444;font-size:12px;">Empty</div>`;
     }
   } else if(hex.building==='ruins'){
@@ -4157,49 +4567,61 @@ function renderHexPanel(c,r){
   }
 
   // Relay transfer UI
-  if(hex.building==='relay'&&hex.owner==='player'&&!hex._relayUsed){
-    h+=`<div style="margin-top:6px;"><div style="color:#8AAE8A;font-size:13px;margin-bottom:4px;">Transfer resources (1/turn):</div>`;
-    h+=`<div style="color:#556;font-size:11px;margin-bottom:6px;">Drag between relay and adjacent building on the map, or use buttons below:</div>`;
+  if((hex.building==='relay'||hex.building==='teleporter')&&hex.owner==='player'&&!hex._relayUsed){
+    const isTele=hex.building==='teleporter';
+    h+=`<div style="margin-top:6px;"><div style="color:#8AAE8A;font-size:13px;margin-bottom:4px;">${isTele?'Teleport':'Transfer'} resources (1/turn):</div>`;
+    if(isTele) h+=`<div style="color:#556;font-size:11px;margin-bottom:6px;">Teleport to any other teleporter or adjacent building.</div>`;
+    else h+=`<div style="color:#556;font-size:11px;margin-bottom:6px;">Drag between relay and adjacent building on the map, or use buttons below:</div>`;
     // Pull from adjacent — show building names, not coordinates
     for(const nb of hexNb(c,r)){
       const adj=G.map[nb.col][nb.row];
       if(adj.owner==='player'&&adj.building){
-        const hasRes=TILE_RES.some(r2=>(adj.stockpile[r2]||0)>0);
+        const hasRes=pTileRes().some(r2=>(adj.stockpile[r2]||0)>0);
         if(hasRes){
-          const bd=BLDG[adj.building]||EBLDG[adj.building];
+          const bd=anyBldg(adj.building);
           const bName=bd?bd.name:'Building';
-          const resStr=TILE_RES.filter(r2=>(adj.stockpile[r2]||0)>0).map(r2=>`${RICON[r2]}${adj.stockpile[r2]}`).join(' ');
+          const resStr=pTileRes().filter(r2=>(adj.stockpile[r2]||0)>0).map(r2=>`${RICON[r2]}${adj.stockpile[r2]}`).join(' ');
           h+=`<button class="action-btn green" onclick="relayPull(${c},${r},${nb.col},${nb.row})" style="font-size:12px;margin-bottom:3px;width:100%;text-align:left;">← Pull from ${bName} ${resStr}</button>`;
         }
       }
     }
     // Push to adjacent — show building names
-    const hasOwn=TILE_RES.some(r2=>(hex.stockpile[r2]||0)>0);
+    const hasOwn=pTileRes().some(r2=>(hex.stockpile[r2]||0)>0);
     if(hasOwn){
-      const ownStr=TILE_RES.filter(r2=>(hex.stockpile[r2]||0)>0).map(r2=>`${RICON[r2]}${hex.stockpile[r2]}`).join(' ');
-      h+=`<div style="font-size:12px;color:#aaa;margin:4px 0;">On relay: ${ownStr}</div>`;
+      const ownStr=pTileRes().filter(r2=>(hex.stockpile[r2]||0)>0).map(r2=>`${RICON[r2]}${hex.stockpile[r2]}`).join(' ');
+      h+=`<div style="font-size:12px;color:#aaa;margin:4px 0;">On ${isTele?'teleporter':'relay'}: ${ownStr}</div>`;
       for(const nb of hexNb(c,r)){
         const adj=G.map[nb.col][nb.row];
         if(adj.owner==='player'&&adj.building){
-          const bd=BLDG[adj.building]||EBLDG[adj.building];
+          const bd=anyBldg(adj.building);
           const bName=bd?bd.name:'Building';
           h+=`<button class="action-btn" onclick="relayPush(${c},${r},${nb.col},${nb.row})" style="font-size:12px;margin-bottom:3px;width:100%;text-align:left;">→ Push to ${bName}</button>`;
+        }
+      }
+      // Teleporter: push to remote teleporters
+      if(isTele){
+        for(let tc2=0;tc2<CFG.COLS;tc2++) for(let tr2=0;tr2<CFG.ROWS;tr2++){
+          if(tc2===c&&tr2===r) continue;
+          const rh=G.map[tc2][tr2];
+          if(rh.building==='teleporter'&&rh.owner==='player'){
+            h+=`<button class="action-btn" onclick="relayPush(${c},${r},${tc2},${tr2})" style="font-size:12px;margin-bottom:3px;width:100%;text-align:left;">⟶ Teleport to (${tc2},${tr2})</button>`;
+          }
         }
       }
     }
     h+=`</div>`;
   }
-  if(hex._relayUsed) h+=`<div style="color:#666;font-size:12px;margin-top:4px;">Relay fully used this turn.</div>`;
-  else if(hex.building==='relay'&&hex._relayUsesLeft>0&&hex._relayUsesLeft<(hasUpgrade('relay_amplifier')?2:1))
-    h+=`<div style="color:#88cc88;font-size:12px;margin-top:4px;">Relay: ${hex._relayUsesLeft} transfer${hex._relayUsesLeft>1?'s':''} remaining.</div>`;
+  if(hex._relayUsed) h+=`<div style="color:#666;font-size:12px;margin-top:4px;">${hex.building==='teleporter'?'Teleporter':'Relay'} fully used this turn.</div>`;
+  else if((hex.building==='relay'||hex.building==='teleporter')&&hex._relayUsesLeft>0&&hex._relayUsesLeft<(hasUpgrade('relay_amplifier')?2:1))
+    h+=`<div style="color:#88cc88;font-size:12px;margin-top:4px;">${hex.building==='teleporter'?'Teleporter':'Relay'}: ${hex._relayUsesLeft} transfer${hex._relayUsesLeft>1?'s':''} remaining.</div>`;
 
   // Research Lab upgrades panel
-  if(hex.building==='research_lab'&&hex.owner==='player'&&!hex._starved){
+  if((hex.building==='research_lab'||hex.building==='voton_research_lab')&&hex.owner==='player'&&!hex._starved){
     const avail=sumAdj(c,r);
     h+=`<div class="panel"><div class="panel-title">Research Upgrades</div><div class="panel-content">`;
-    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits}</div>`;
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${pTileRes().map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')}${isVoton()?'':' | Bank: \u00a4'+G.credits}</div>`;
     let anyAvail=false;
-    for(const[key,u] of Object.entries(UPGRADES)){
+    for(const[key,u] of Object.entries(pUPGRADES())){
       if(hasUpgrade(key)){
         h+=`<div style="color:#4c4;font-size:12px;margin:4px 0;padding:4px;border:1px solid #1a3a2a;border-radius:3px;">✓ ${u.name} — ${u.desc}</div>`;
         continue;
@@ -4212,13 +4634,13 @@ function renderHexPanel(c,r){
     }
     if(!anyAvail) h+=`<div style="color:#888;font-size:12px;">All upgrades researched!</div>`;
     h+=`</div></div>`;
-  } else if(hex.building==='research_lab'&&hex.owner==='player'&&hex._starved){
+  } else if((hex.building==='research_lab'||hex.building==='voton_research_lab')&&hex.owner==='player'&&hex._starved){
     h+=`<div class="panel"><div class="panel-title">Research Upgrades</div><div class="panel-content">`;
     h+=`<div style="color:#ff4444;font-size:12px;">Lab is offline — requires energy to function.</div>`;
     h+=`</div></div>`;
   }
 
-  if(hex.owner==='player'&&hex.building&&hex.building!=='command_center'&&hex.building!=='ruins')
+  if(hex.owner==='player'&&hex.building&&hex.building!==pHQ()&&hex.building!=='ruins')
     h+=`<div style="margin-top:6px;"><button class="action-btn danger" onclick="doDemolish(${c},${r})">Demolish</button></div>`;
 
   h+=`</div></div>`;
@@ -4228,7 +4650,7 @@ function renderHexPanel(c,r){
   if(sh.length>0){
     h+=`<div class="panel"><div class="panel-title">Ships Here</div><div class="panel-content">`;
     for(const s of sh){
-      const sd=SHIPS[s.type];
+      const sd=shipDef(s);
       const oc=ownerHexColor(s.owner);
       h+=`<div style="margin-bottom:6px;padding:4px;border:1px solid #2A3E2A;border-radius:3px;">`;
       h+=`<div><strong style="color:${oc}">${sd.name}</strong> <span style="color:#666">(${G.factions[s.owner]||s.owner})</span></div>`;
@@ -4279,8 +4701,8 @@ function renderHexPanel(c,r){
   if(!hex.building&&(!hex.owner||hex.owner==='player')&&isAdjPlayer(c,r)){
     const avail=sumAdj(c,r);
     h+=`<div class="panel"><div class="panel-title">Build Here</div><div class="panel-content">`;
-    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits} | 👤${popFree()} free</div>`;
-    for(const[key,def] of Object.entries(BLDG)){
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${pTileRes().map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')}${bankStr()} | 👤${popFree()} free</div>`;
+    for(const[key,def] of Object.entries(pBLDG())){
       if(def.canBuild===false) continue;
       const able=canBuildAt(key,c,r);
       const tok=!def.needsTerrain||hex.terrain===def.needsTerrain;
@@ -4290,7 +4712,7 @@ function renderHexPanel(c,r){
       if(!tok) note=` (needs ${def.needsTerrain})`;
       else if(!able){
         if(!canGather(c,r,tileCost(def.cost))) note=' (need more resources nearby)';
-        else if(G.credits<creditCost(def.cost)) note=` (need ${creditCost(def.cost)}${RICON.credits})`;
+        else if(G.credits<creditCost(def.cost)) note=` (need ${creditCost(def.cost)}${bankIcon()})`;
         else if((def.pop||0)>popFree()) note=` (need ${def.pop}👤, ${popFree()} free)`;
         else note=' (insufficient)';
       }
@@ -4302,17 +4724,20 @@ function renderHexPanel(c,r){
   }
 
   // Ship building at spaceport
-  if(hex.building==='spaceport'&&hex.owner==='player'){
+  if((hex.building==='spaceport'||hex.building==='voton_spaceport')&&hex.owner==='player'){
     const avail=sumAdj(c,r);
     h+=`<div class="panel"><div class="panel-title">Build Ships</div><div class="panel-content">`;
-    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${TILE_RES.map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')} | Bank: ${RICON.credits}${G.credits}</div>`;
-    for(const[key,sd] of Object.entries(SHIPS)){
+    h+=`<div style="font-size:11px;color:#666;margin-bottom:4px;">Nearby: ${pTileRes().map(r2=>`${RICON[r2]}${avail[r2]}`).join(' ')}${bankStr()}</div>`;
+    for(const[key,sd] of Object.entries(pSHIPS())){
       const tc=tileCost(sd.cost);
-      const able=canGather(c,r,tc)&&G.credits>=creditCost(sd.cost);
+      let able=canGather(c,r,tc)&&G.credits>=creditCost(sd.cost);
+      if(sd.crystalReq&&crystalLevel()<sd.crystalReq) able=false;
       const costStr=Object.entries(sd.cost).map(([r2,a])=>`${a}${RICON[r2]}`).join(' ');
+      const crReq=sd.crystalReq?` 🔮${sd.crystalReq}`:'';
+      const shStr=sd.shieldMax?` 🛡S:${sd.shieldMax}`:'';
       const tutHL=(tutCurrentStep()&&tutCurrentStep().tutShip===key)?' tut-highlight':'';
       h+=`<button class="build-btn${tutHL}" ${able?'':'disabled'} onclick="buildShip('${key}')">`;
-      h+=`<strong>${sd.name}</strong> (⚔${sd.combat} Rng:${sd.range||1} 🛡${sd.armor||0} Spd:${sd.speed} Crg:${sd.cargo})<br>`;
+      h+=`<strong>${sd.name}</strong> (⚔${sd.combat} Rng:${sd.range||1} 🛡${sd.armor||0}${shStr} Spd:${sd.speed} Crg:${sd.cargo}${crReq})<br>`;
       h+=`<span class="cost">${costStr}</span> — ${sd.desc}</button>`;
     }
     h+=`</div></div>`;
@@ -4323,13 +4748,17 @@ function renderHexPanel(c,r){
 }
 
 function renderShipPanel(ship){
-  const sd=SHIPS[ship.type];
+  const sd=shipDef(ship);
   const oc=ownerHexColor(ship.owner);
   const port=getPortrait(ship.owner);
   let h=`<div class="panel"><div class="panel-title">${sd.name} <span style="color:#666">(${G.factions[ship.owner]||ship.owner})</span></div><div class="panel-content">`;
   if(port&&ship.owner!=='player') h+=`<img src="${port}" alt="" style="display:block;width:132px;height:132px;margin:0 auto 10px auto;border-radius:50%;border:2px solid ${oc};object-fit:cover;">`;
   h+=`<div class="hp-bar-outer"><div class="hp-bar-inner" style="width:${ship.hp/ship.maxHp*100}%;background:${ship.hp/ship.maxHp>0.5?'#0a0':'#aa0'}"></div></div>`;
   h+=`<div class="stat-row"><span class="stat-label">HP</span><span class="stat-val">${ship.hp}/${ship.maxHp}</span></div>`;
+  if(ship.shieldMax>0){
+    h+=`<div class="hp-bar-outer" style="margin-top:2px;"><div class="hp-bar-inner" style="width:${ship.shield/ship.shieldMax*100}%;background:#66ddff"></div></div>`;
+    h+=`<div class="stat-row"><span class="stat-label">Shield</span><span class="stat-val" style="color:#66ddff">${ship.shield}/${ship.shieldMax}</span></div>`;
+  }
   h+=`<div class="stat-row"><span class="stat-label">Combat</span><span class="stat-val">⚔ ${ship.combat}</span></div>`;
   h+=`<div class="stat-row"><span class="stat-label">Range</span><span class="stat-val">${ship.range||1}</span></div>`;
   h+=`<div class="stat-row"><span class="stat-label">Armor</span><span class="stat-val">🛡 ${ship.armor||0}</span></div>`;
@@ -4341,7 +4770,7 @@ function renderShipPanel(ship){
   // Cargo
   if(ship.cargoMax>0){
     h+=`<div class="panel"><div class="panel-title">Cargo (${shipTotal(ship)}/${ship.cargoMax})</div><div class="panel-content">`;
-    for(const res of TILE_RES){
+    for(const res of pTileRes()){
       if(ship.cargo[res]>0){
         const ulHL=(tutCurrentStep()&&tutCurrentStep().tutAction==='unload_minerals'&&res==='minerals')?' tut-highlight':'';
         h+=`<div class="cargo-row"><span style="color:${RCOL[res]}">${RICON[res]} ${res}: ${ship.cargo[res]}</span>`;
@@ -4352,7 +4781,7 @@ function renderShipPanel(ship){
 
     const hex=G.map[ship.col][ship.row];
     if(hex.stockpile&&shipSpace(ship)>0){
-      const loadable=TILE_RES.filter(r2=>(hex.stockpile[r2]||0)>0);
+      const loadable=pTileRes().filter(r2=>(hex.stockpile[r2]||0)>0);
       if(loadable.length>0){
         h+=`<div style="margin-top:6px;font-size:12px;color:#aaa;">Load from this hex:</div>`;
         for(const res of loadable){
@@ -4391,7 +4820,7 @@ function renderShipPanel(ship){
     for(const pos of around){
       const hx=G.map[pos.col][pos.row];
       if(hx.building&&hx.building!=='ruins'&&hx.owner&&isHostile('player',hx.owner)){
-        const bd=BLDG[hx.building]||EBLDG[hx.building]||TRADE_POSTS[hx.building];
+        const bd=anyBldg(hx.building);
         const dist=hexDist(ship.col,ship.row,pos.col,pos.row);
         const bldgRange=bd.range||1;
         const retaliates=((bd.combat||0)>0&&bldgRange>=dist);
@@ -4406,7 +4835,7 @@ function renderShipPanel(ship){
         const defRange=es.range||1;
         const retaliates=(es.combat>0&&defRange>=dist);
         const label=dist>1?` (range ${dist}${retaliates?'':' — no retaliation'})`:(retaliates?' (melee)':' (no retaliation)');
-        h+=`<button class="action-btn danger" onclick="doAttackShip(${ship.id},${es.id})">⚔ Attack ${SHIPS[es.type].name} (HP:${es.hp})${label}</button> `;
+        h+=`<button class="action-btn danger" onclick="doAttackShip(${ship.id},${es.id})">⚔ Attack ${shipDef(es).name} (HP:${es.hp})${label}</button> `;
       }
     }
   }
@@ -4442,7 +4871,7 @@ function renderFleetPanel(ships){
   h+=`<div style="color:#8AAE8A;font-size:12px;margin-bottom:6px;">Location: (${ships[0].col}, ${ships[0].row})</div>`;
   // Ship list
   for(const s of ships){
-    const sd=SHIPS[s.type];
+    const sd=shipDef(s);
     h+=`<div style="margin-bottom:4px;padding:3px;border:1px solid #2A3E2A;border-radius:3px;display:flex;justify-content:space-between;align-items:center;">`;
     h+=`<div><strong style="color:#0e8">${sd.name}</strong> <span style="color:#666;font-size:11px;">HP:${s.hp}/${s.maxHp} ⚔${s.combat} Mv:${s.movesLeft}</span></div>`;
     h+=`<button class="action-btn" onclick="selectShip(${s.id})" style="padding:1px 6px;font-size:10px;">Solo</button>`;
@@ -4473,7 +4902,17 @@ function fleetShips(){
   return selectedFleetIds.map(id=>shipById(id)).filter(s=>s&&s.hp>0);
 }
 function fleetMinMoves(){const fs=fleetShips();if(fs.length===0)return 0;return Math.min(...fs.map(s=>s.movesLeft));}
-function deselect(){selectedHex=null;selectedShipId=null;selectedFleetIds=null;updateAll();}
+function deselect(){selectedHex=null;selectedShipId=null;selectedFleetIds=null;closeSidebar();updateAll();}
+
+// Sidebar toggle for mobile
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  const btn=document.getElementById('sidebar-toggle');
+  btn.textContent=document.getElementById('sidebar').classList.contains('open')?'✕':'☰';
+}
+function isMobile(){ return window.innerWidth<=900; }
+function openSidebar(){ if(isMobile()){ const sb=document.getElementById('sidebar'); sb.classList.add('open'); document.getElementById('sidebar-toggle').textContent='✕'; } }
+function closeSidebar(){ if(isMobile()){ const sb=document.getElementById('sidebar'); sb.classList.remove('open'); document.getElementById('sidebar-toggle').textContent='☰'; } }
 
 function centerOnHex(c,r){
   const sp=h2p(c,r);
@@ -4491,12 +4930,12 @@ function cycleNextReady(){
   const readyRelays=[];
   for(let c=0;c<CFG.COLS;c++) for(let r=0;r<CFG.ROWS;r++){
     const h=G.map[c][r];
-    if(h.building==='relay'&&h.owner==='player'&&!h._relayUsed){
+    if((h.building==='relay'||h.building==='teleporter')&&h.owner==='player'&&!h._relayUsed){
       // Only include if there are adjacent buildings with resources, or relay has resources
-      const hasOwnRes=TILE_RES.some(r2=>(h.stockpile[r2]||0)>0);
+      const hasOwnRes=pTileRes().some(r2=>(h.stockpile[r2]||0)>0);
       const hasAdjRes=hexNb(c,r).some(nb=>{
         const adj=G.map[nb.col][nb.row];
-        return adj.owner==='player'&&adj.building&&TILE_RES.some(r2=>(adj.stockpile[r2]||0)>0);
+        return adj.owner==='player'&&adj.building&&pTileRes().some(r2=>(adj.stockpile[r2]||0)>0);
       });
       if(hasOwnRes||hasAdjRes) readyRelays.push({col:c,row:r});
     }
@@ -4588,13 +5027,13 @@ function setupInput(){
         } else {
           // No selected ship here — try relay drag first, then unselected ship path
           let relayHandled=false;
-          if(h.building==='relay'&&h.owner==='player'&&!h._relayUsed){
+          if((h.building==='relay'||h.building==='teleporter')&&h.owner==='player'&&!h._relayUsed){
             relayDragFrom={col:hex.col,row:hex.row,isRelay:true};
             relayHandled=true;
           } else if(h.owner==='player'&&h.building){
             const adjRelay=hexNb(hex.col,hex.row).find(nb=>{
               const rh=G.map[nb.col][nb.row];
-              return rh.building==='relay'&&rh.owner==='player'&&!rh._relayUsed;
+              return (rh.building==='relay'||rh.building==='teleporter')&&rh.owner==='player'&&!rh._relayUsed;
             });
             if(adjRelay){relayDragFrom={col:hex.col,row:hex.row,isRelay:false,relayCol:adjRelay.col,relayRow:adjRelay.row};relayHandled=true;}
           }
@@ -4710,26 +5149,26 @@ function setupInput(){
                         G.credits-=deal.price;ship.cargo[deal.resource]=(ship.cargo[deal.resource]||0)+deal.amount;traded=true;
                       }
                     }
-                    if(traded) log(`${SHIPS[ship.type].name} auto-traded at ${tpDef2.name}.`,'info');
+                    if(traded) log(`${shipDef(ship).name} auto-traded at ${tpDef2.name}.`,'info');
                   } else {
                   const total=shipTotal(ship);
                   if(total>0&&destHex.owner==='player'&&destHex.building){
                     // Auto-unload all cargo at friendly buildings
-                    for(const res of TILE_RES){
+                    for(const res of pTileRes()){
                       const amt=ship.cargo[res]||0;
                       if(amt>0){destHex.stockpile[res]=(destHex.stockpile[res]||0)+amt;ship.cargo[res]=0;}
                     }
-                    log(`${SHIPS[ship.type].name} auto-unloaded cargo.`,'info');
+                    log(`${shipDef(ship).name} auto-unloaded cargo.`,'info');
                     tutorialCheck();
                   } else if(total===0&&destHex.owner==='player'&&destHex.building){
                     // Auto-load: pick up whatever's here
-                    for(const res of TILE_RES){
+                    for(const res of pTileRes()){
                       const avail=destHex.stockpile[res]||0;
                       const space=shipSpace(ship);
                       const amt=Math.min(avail,space);
                       if(amt>0){destHex.stockpile[res]-=amt;ship.cargo[res]+=amt;}
                     }
-                    if(shipTotal(ship)>0){log(`${SHIPS[ship.type].name} auto-loaded cargo.`,'info');tutorialCheck();}
+                    if(shipTotal(ship)>0){log(`${shipDef(ship).name} auto-loaded cargo.`,'info');tutorialCheck();}
                   }
                   }
                 }
@@ -4790,7 +5229,7 @@ function setupInput(){
         // Check if 'to' is a relay adjacent to 'from'
         const d=hexDist(from.col,from.row,to.col,to.row);
         const th=G.map[to.col][to.row];
-        if(d===1&&th.building==='relay'&&th.owner==='player'&&!th._relayUsed){
+        if(d===1&&(th.building==='relay'||th.building==='teleporter')&&th.owner==='player'&&!th._relayUsed){
           relayPull(to.col,to.row,from.col,from.row);
           selectedHex={col:to.col,row:to.row};
           updateAll(); return;
@@ -4811,7 +5250,7 @@ function setupInput(){
         ship.pathIdx=0;
         ship.pathDir=1;
         ship.pathOrigin={col:ship.col,row:ship.row};
-        log(`Path set for ${SHIPS[ship.type].name}: ${ship.path.length} waypoints.`,'info');
+        log(`Path set for ${shipDef(ship).name}: ${ship.path.length} waypoints.`,'info');
         selectedShipId=ship.id;
         selectedHex={col:ship.col,row:ship.row};
       }
@@ -4846,6 +5285,7 @@ function setupInput(){
     const ps=shipsAt(hex.col,hex.row,'player');
     if(ps.length===1) selectedShipId=ps[0].id;
 
+    openSidebar();
     updateSidebar(); render();
   });
 
@@ -4873,12 +5313,12 @@ function setupInput(){
       if(ship&&ship.owner==='player'&&ship.cargoMax>0){
         const h=G.map[ship.col][ship.row];
         let loaded=false;
-        for(const res of TILE_RES){
+        for(const res of pTileRes()){
           const avail=h.stockpile[res]||0, space=shipSpace(ship);
           const amt=Math.min(avail,space);
           if(amt>0){h.stockpile[res]-=amt;ship.cargo[res]+=amt;loaded=true;}
         }
-        if(loaded){log(`Loaded cargo onto ${SHIPS[ship.type].name}.`,'info');updateAll();tutorialCheck();}
+        if(loaded){log(`Loaded cargo onto ${shipDef(ship).name}.`,'info');updateAll();tutorialCheck();}
       }
     }
     if((e.key==='u'||e.key==='U')&&selectedShipId){
@@ -4886,11 +5326,11 @@ function setupInput(){
       if(ship&&ship.owner==='player'&&ship.cargoMax>0){
         const h=G.map[ship.col][ship.row];
         let unloaded=false;
-        for(const res of TILE_RES){
+        for(const res of pTileRes()){
           const amt=ship.cargo[res]||0;
           if(amt>0){h.stockpile[res]=(h.stockpile[res]||0)+amt;ship.cargo[res]=0;unloaded=true;}
         }
-        if(unloaded){log(`Unloaded cargo from ${SHIPS[ship.type].name}.`,'info');updateAll();tutorialCheck();}
+        if(unloaded){log(`Unloaded cargo from ${shipDef(ship).name}.`,'info');updateAll();tutorialCheck();}
       }
     }
     // Tab = cycle through ready units (ships with moves, unused relays)
@@ -4905,6 +5345,161 @@ function setupInput(){
     if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){cam.y-=PAN;clampCam();render();}
     if(e.key==='='||e.key==='+'){const cx=canvas.width/2,cy=canvas.height/2;const oldZ=cam.zoom;cam.zoom=Math.min(3,cam.zoom+0.15);cam.x=cx-(cx-cam.x)*(cam.zoom/oldZ);cam.y=cy-(cy-cam.y)*(cam.zoom/oldZ);clampCam();render();}
     if(e.key==='-'||e.key==='_'){const cx=canvas.width/2,cy=canvas.height/2;const oldZ=cam.zoom;cam.zoom=Math.max(0.3,cam.zoom-0.15);cam.x=cx-(cx-cam.x)*(cam.zoom/oldZ);cam.y=cy-(cy-cam.y)*(cam.zoom/oldZ);clampCam();render();}
+  });
+
+  // === TOUCH INPUT ===
+  let touchStartTime=0, touchStartPos=null, touchPanning=false, lastTouchDist=0, touchMoved=false;
+  let longPressTimer=null, longPressFired=false;
+
+  canvas.addEventListener('touchstart',(e)=>{
+    e.preventDefault();
+    const t=e.touches;
+    touchMoved=false;
+    longPressFired=false;
+    if(t.length===1){
+      touchStartTime=Date.now();
+      touchStartPos={x:t[0].clientX, y:t[0].clientY};
+      touchPanning=false;
+      dragStart={x:t[0].clientX,y:t[0].clientY};
+      camStart={x:cam.x,y:cam.y};
+      // Long-press timer for right-click actions (move ship)
+      longPressTimer=setTimeout(()=>{
+        if(!touchMoved){
+          longPressFired=true;
+          const rect=canvas.getBoundingClientRect();
+          const hex=p2h(t[0].clientX-rect.left,t[0].clientY-rect.top);
+          if(hex&&selectedShipId){
+            const ship=shipById(selectedShipId);
+            if(ship&&ship.movesLeft>0){
+              const d=hexDist(ship.col,ship.row,hex.col,hex.row);
+              if(d>0&&d<=ship.movesLeft){
+                ship.path=[];ship.pathIdx=0;ship.pathDir=1;ship.pathOrigin=null;
+                moveShipTo(ship,hex.col,hex.row);
+                if(ship.hp>0){
+                  selectedHex={col:ship.col,row:ship.row};
+                  if(autoCargoTransfer&&ship.cargoMax>0){
+                    const destHex=G.map[ship.col][ship.row];
+                    const tpDef2=TRADE_POSTS[destHex.building];
+                    if(tpDef2&&destHex.owner==='neutral'){
+                      let traded=false;
+                      for(const deal of tpDef2.deals){if(deal.type!=='buy')continue;while((ship.cargo[deal.resource]||0)>=deal.amount){ship.cargo[deal.resource]-=deal.amount;G.credits+=deal.price;traded=true;}}
+                      for(const deal of tpDef2.deals){if(deal.type!=='sell')continue;while(G.credits>=deal.price&&shipSpace(ship)>=deal.amount){G.credits-=deal.price;ship.cargo[deal.resource]=(ship.cargo[deal.resource]||0)+deal.amount;traded=true;}}
+                      if(traded) log(`${shipDef(ship).name} auto-traded at ${tpDef2.name}.`,'info');
+                    } else {
+                      const total=shipTotal(ship);
+                      if(total>0&&destHex.owner==='player'&&destHex.building){
+                        for(const res of pTileRes()){const amt=ship.cargo[res]||0;if(amt>0){destHex.stockpile[res]=(destHex.stockpile[res]||0)+amt;ship.cargo[res]=0;}}
+                        log(`${shipDef(ship).name} auto-unloaded cargo.`,'info');tutorialCheck();
+                      } else if(total===0&&destHex.owner==='player'&&destHex.building){
+                        for(const res of pTileRes()){const avail=destHex.stockpile[res]||0,space=shipSpace(ship),amt=Math.min(avail,space);if(amt>0){destHex.stockpile[res]-=amt;ship.cargo[res]+=amt;}}
+                        if(shipTotal(ship)>0){log(`${shipDef(ship).name} auto-loaded cargo.`,'info');tutorialCheck();}
+                      }
+                    }
+                  }
+                } else {selectedShipId=null;selectedHex=hex;}
+                updateAll();
+              }
+            }
+          }
+          // Fleet long-press move
+          if(hex&&selectedFleetIds&&!selectedShipId){
+            const fs=fleetShips();const mm=fleetMinMoves();
+            if(fs.length>0&&mm>0){
+              const d=hexDist(fs[0].col,fs[0].row,hex.col,hex.row);
+              if(d>0&&d<=mm){
+                for(const s of [...fs]) moveShipTo(s,hex.col,hex.row);
+                selectedFleetIds=selectedFleetIds.filter(id=>{const s=shipById(id);return s&&s.hp>0;});
+                if(selectedFleetIds.length===0){selectedFleetIds=null;selectedHex=hex;}
+                else selectedHex={col:hex.col,row:hex.row};
+                updateAll();
+              }
+            }
+          }
+        }
+      },500);
+    }
+    if(t.length===2){
+      clearTimeout(longPressTimer);
+      touchPanning=true;
+      lastTouchDist=Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);
+      const mx=(t[0].clientX+t[1].clientX)/2, my=(t[0].clientY+t[1].clientY)/2;
+      dragStart={x:mx,y:my};
+      camStart={x:cam.x,y:cam.y};
+    }
+  },{passive:false});
+
+  canvas.addEventListener('touchmove',(e)=>{
+    e.preventDefault();
+    const t=e.touches;
+    if(t.length===1&&!touchPanning){
+      const dx=t[0].clientX-dragStart.x, dy=t[0].clientY-dragStart.y;
+      if(Math.abs(dx)>8||Math.abs(dy)>8){
+        touchMoved=true;
+        clearTimeout(longPressTimer);
+        cam.x=camStart.x+dx;cam.y=camStart.y+dy;
+        clampCam();render();
+      }
+    }
+    if(t.length===2){
+      touchMoved=true;
+      clearTimeout(longPressTimer);
+      // Pinch zoom
+      const dist=Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);
+      const rect=canvas.getBoundingClientRect();
+      const mx=(t[0].clientX+t[1].clientX)/2-rect.left;
+      const my=(t[0].clientY+t[1].clientY)/2-rect.top;
+      const scale=dist/lastTouchDist;
+      const oldZ=cam.zoom;
+      cam.zoom=Math.max(0.3,Math.min(3,cam.zoom*scale));
+      cam.x=mx-(mx-cam.x)*(cam.zoom/oldZ);
+      cam.y=my-(my-cam.y)*(cam.zoom/oldZ);
+      lastTouchDist=dist;
+      // Pan with two fingers
+      const mx2=(t[0].clientX+t[1].clientX)/2;
+      const my2=(t[0].clientY+t[1].clientY)/2;
+      cam.x=camStart.x+(mx2-dragStart.x);
+      cam.y=camStart.y+(my2-dragStart.y);
+      clampCam();render();
+    }
+  },{passive:false});
+
+  canvas.addEventListener('touchend',(e)=>{
+    e.preventDefault();
+    clearTimeout(longPressTimer);
+    if(longPressFired){longPressFired=false;return;}
+    if(!touchMoved&&e.changedTouches.length===1){
+      // Tap = select hex
+      const ct=e.changedTouches[0];
+      const rect=canvas.getBoundingClientRect();
+      const hex=p2h(ct.clientX-rect.left,ct.clientY-rect.top);
+      if(hex){
+        if(selectedShipId){
+          const ship=shipById(selectedShipId);
+          if(ship&&hex.col===ship.col&&hex.row===ship.row){selectedShipId=null;selectedHex=hex;openSidebar();updateSidebar();render();return;}
+          selectedShipId=null;
+        }
+        if(selectedFleetIds){
+          const fs=fleetShips();
+          if(fs.length>0&&hex.col===fs[0].col&&hex.row===fs[0].row){selectedFleetIds=null;selectedHex=hex;openSidebar();updateSidebar();render();return;}
+          selectedFleetIds=null;
+        }
+        selectedHex=hex;
+        const ps=shipsAt(hex.col,hex.row,'player');
+        if(ps.length===1) selectedShipId=ps[0].id;
+        openSidebar();
+        updateSidebar();render();
+        tutorialCheck();
+      }
+    }
+    touchPanning=false;
+  },{passive:false});
+
+  // Close sidebar when tapping map (on touch devices, if sidebar is open and tap is on canvas)
+  document.getElementById('sidebar').addEventListener('click',(e)=>{
+    if(e.target.closest('.action-btn,.build-btn,button')&&isMobile()){
+      // Let button actions run, then close after a short delay
+      setTimeout(()=>{ if(!selectedHex&&!selectedShipId&&!selectedFleetIds) closeSidebar(); },300);
+    }
   });
 }
 
@@ -4924,12 +5519,32 @@ function clampCam(){
 function resizeCanvas(){
   const con=document.getElementById('map-container');
   canvas.width=con.clientWidth; canvas.height=con.clientHeight;
+  // Reset sidebar state when crossing mobile/desktop threshold
+  if(!isMobile()){
+    const sb=document.getElementById('sidebar');
+    sb.classList.remove('open');
+    document.getElementById('sidebar-toggle').textContent='☰';
+  }
   genStars(); render();
 }
 
 // ============================================================
 // INIT
 // ============================================================
+let selectedFaction='alliance';
+function selectFaction(f){
+  selectedFaction=f;
+  const aBtn=document.getElementById('faction-alliance');
+  const vBtn=document.getElementById('faction-voton');
+  if(f==='voton'){
+    vBtn.style.borderColor='#66ddff'; vBtn.style.color='#66ddff'; vBtn.style.background='#0a0a1a';
+    aBtn.style.borderColor='#333'; aBtn.style.color='#666'; aBtn.style.background='#0a1a0a';
+  } else {
+    aBtn.style.borderColor='#33ff66'; aBtn.style.color='#33ff66'; aBtn.style.background='#0a1a0a';
+    vBtn.style.borderColor='#333'; vBtn.style.color='#666'; vBtn.style.background='#0a0a1a';
+  }
+}
+
 function init(){
   canvas=document.getElementById('map');
   ctx=canvas.getContext('2d');
@@ -4939,12 +5554,12 @@ function init(){
   requestAnimationFrame(animLoop);
 }
 
-function startGame(levelKey){
+function startGame(levelKey, playerFaction){
   const lvlCfg=LEVELS[levelKey]||LEVELS.frontier;
   const shape=lvlCfg.shape||'rectangle', sz=lvlCfg.mapSize||'medium';
   const dims=(MAP_DIMS[shape]||MAP_DIMS.rectangle)[sz]||MAP_DIMS.rectangle.medium;
   CFG.COLS=dims[0]; CFG.ROWS=dims[1];
-  G=newGame(levelKey); G.map=genMap();
+  G=newGame(levelKey, playerFaction||'alliance'); G.map=genMap();
   nextShipId=1; starField=[];
   selectedHex=null; selectedShipId=null; selectedFleetIds=null; hoveredHex=null;
   cam={x:0,y:0,zoom:1};
@@ -4952,11 +5567,19 @@ function startGame(levelKey){
   document.getElementById('intro-overlay').style.display='none';
   document.getElementById('event-popup').style.display='none';
   document.getElementById('log-panel').innerHTML='';
-  const cc=findBldg('command_center','player');
-  const starter=spawnShip('hovertranspo','player',cc.col,cc.row);
-  starter.movesLeft=SHIPS.hovertranspo.speed;
+  const cc=findBldg(pHQ(),'player');
+  const starterType=pStarterShip();
+  const starterCount=pStarterCount();
+  for(let i=0;i<starterCount;i++){
+    const s=spawnShip(starterType,'player',cc.col,cc.row);
+    s.movesLeft=shipDefByType(starterType).speed;
+  }
   resetShips();
-  log('Colony established. A Hover Transpo is ready to transport resources.','good');
+  if(isVoton()){
+    log('Voton Nexus established. Drones are ready to transport resources.','good');
+  } else {
+    log('Colony established. A Hover Transpo is ready to transport resources.','good');
+  }
   const lvl=LEVELS[levelKey];
   const activeRivals=getRivals();
   if(activeRivals.length>0&&lvl.pirates){
@@ -4970,10 +5593,12 @@ function startGame(levelKey){
     showTutorial(0);
     log('Tutorial mode — follow the popup hints to learn the game.','info');
   } else {
-    log('Your Command Center has starting resources. Build mines and solar arrays to get your economy started.','info');
+    const hqName=pBLDG()[pHQ()].name;
+    log(`Your ${hqName} has starting resources. Build ${isVoton()?'mines and crystal shrines':'mines and solar arrays'} to get your economy started.`,'info');
   }
   resizeCanvas();
   updateAll();
+  checkEvents();
 }
 
 init();

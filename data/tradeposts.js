@@ -26,7 +26,7 @@ const TRADE_POSTS = {
     desc: 'Industrial outpost. Dirt-cheap bulk minerals, pays premium for food.',
   },
   free_market: {
-    name: 'Free Market', sym: 'FM', faction: 'Free Market Consortium', portrait: null,
+    name: 'Free Market', sym: 'FM', faction: 'Free Market Consortium', portrait: 'assets/free_market.png',
     hp: 15,
     deals: [
       { type: 'sell', resource: 'minerals', amount: 6, price: 2, label: 'Buy 6◆ ← 2¤' },
@@ -35,7 +35,7 @@ const TRADE_POSTS = {
     desc: 'Open bazaar. Cheap supplies of everything — a lifeline in a crisis.',
   },
   stardust_broker: {
-    name: 'Stardust Broker', sym: 'SB', faction: 'Stardust Brokers', portrait: null,
+    name: 'Stardust Broker', sym: 'SB', faction: 'Stardust Brokers', portrait: 'assets/stardust_broker.png',
     hp: 12,
     deals: [
       { type: 'buy', resource: 'stardust', amount: 2, price: 20, label: 'Sell 2✦ → 20¤' },
@@ -53,7 +53,7 @@ const TRADE_POSTS = {
     desc: 'Mystical traders offering bulk stardust and minerals for credits.',
   },
   void_emporium: {
-    name: 'Void Emporium', sym: 'VE', faction: 'Void Emporium', portrait: null,
+    name: 'Void Emporium', sym: 'VE', faction: 'Void Emporium', portrait: 'assets/void_emporium.png',
     hp: 14,
     deals: [
       { type: 'buy', resource: 'stardust',  amount: 1, price: 12, label: 'Sell 1✦ → 12¤' },

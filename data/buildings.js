@@ -12,31 +12,31 @@ const BLDG = {
   relay: {
     name: 'Relay Station', sym: 'RS',
     cost: { minerals: 3 }, prod: {}, cons: {},
-    hp: 3, combat: 0, pop: 1,
+    hp: 1, combat: 0, pop: 1,
     desc: 'Network extender. Transfers resources to/from adjacent once per turn.',
   },
   solar_array: {
     name: 'Solar Array', sym: 'SA',
     cost: { minerals: 5 }, prod: { energy: 4 }, cons: {},
-    hp: 5, combat: 0, pop: 0,
+    hp: 1, combat: 0, pop: 0,
     desc: '+4 Energy/turn.',
   },
   reactor: {
     name: 'Reactor', sym: 'RC',
     cost: { minerals: 20 }, prod: { energy: 20 }, cons: {},
-    hp: 16, combat: 0, pop: 4,
+    hp: 9, combat: 0, pop: 4,
     desc: '+20 Energy/turn. Efficient but expensive.',
   },
   mine: {
     name: 'Mine', sym: 'MI',
     cost: { minerals: 6 }, prod: { minerals: 5 }, cons: { energy: 1 },
-    hp: 6, combat: 0, pop: 2, needsTerrain: 'asteroid',
+    hp: 4, combat: 0, pop: 2, needsTerrain: 'asteroid',
     desc: '+5 Minerals, -1 Energy. Asteroid only.',
   },
   reprocessor: {
     name: 'Reprocessor', sym: 'RP',
     cost: { minerals: 4 }, prod: { food: 1 }, cons: { energy: 1 },
-    hp: 6, combat: 0, pop: 0,
+    hp: 1, combat: 0, pop: 0,
     desc: '+1 Food, -1 Energy.',
   },
   hydroponics: {
@@ -66,32 +66,32 @@ const BLDG = {
   defense_turret: {
     name: 'Defense Turret', sym: 'DT',
     cost: { minerals: 10, credits: 2 }, prod: {}, cons: { energy: 2 },
-    hp: 14, combat: 7, range: 1, armor: 0, pop: 1,
+    hp: 3, combat: 7, range: 1, armor: 0, pop: 1,
     desc: 'Auto-attacks adjacent. 7 combat. -2 Energy/turn.',
   },
   missile_battery: {
     name: 'Missile Battery', sym: 'MB',
     cost: { minerals: 14, credits: 5 }, prod: {}, cons: { energy: 3 },
-    hp: 10, combat: 5, range: 3, armor: 2, pop: 2,
+    hp: 3, combat: 5, range: 3, armor: 1, pop: 2,
     desc: 'Long-range turret. Range 3, 5 combat, 2 armor. -3 Energy/turn.',
   },
   dust_siphon: {
     name: 'Dust Siphon', sym: 'DS',
     cost: { minerals: 12, credits: 4 }, prod: { stardust: 2 }, cons: { energy: 2 },
-    hp: 8, combat: 0, pop: 2, needsTerrain: 'nebula',
+    hp: 7, combat: 0, pop: 2, needsTerrain: 'nebula',
     desc: '+2 Stardust, -2 Energy. Nebula only.',
   },
   research_lab: {
     name: 'Research Lab', sym: 'RL',
     cost: { minerals: 18, stardust: 4, credits: 6 }, prod: {}, cons: { energy: 3 },
-    hp: 10, combat: 0, pop: 3,
+    hp: 8, combat: 0, pop: 3,
     desc: 'Unlocks upgrades. Select to purchase research.',
   },
 };
 
 // Enemy-only buildings (pirate-unique structures with no player equivalent)
 const EBLDG = {
-  pirate_base:   { name: 'Pirate Base',   sym: 'PB', hp: 25, combat: 5, range: 1, armor: 2 },
-  pirate_turret: { name: 'Pirate Turret', sym: 'PT', hp: 15, combat: 8, range: 2, armor: 1 },
+  pirate_base:   { name: 'Pirate Base',   sym: 'PB', hp: 10, combat: 5, range: 1, armor: 1 },
+  pirate_turret: { name: 'Pirate Turret', sym: 'PT', hp: 4, combat: 8, range: 2, armor: 1 },
   ruins: { name: 'Ruins', sym: '~~', hp: 0, combat: 0 },
 };
